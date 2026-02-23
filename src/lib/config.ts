@@ -72,7 +72,7 @@ function loadConfig(): PreflightConfig {
   const triagePath = join(preflightDir, "triage.yml");
 
   // Start with defaults
-  let config: PreflightConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  const config: PreflightConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 
   // Load .preflight/config.yml if it exists
   if (existsSync(configPath)) {

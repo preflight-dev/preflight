@@ -42,13 +42,13 @@ interface ScoreResult {
 
 function scorePrompt(text: string): ScoreResult {
   const feedback: string[] = [];
-  let specificity = 0;
-  let scope = 0;
-  let actionability = 0;
-  let doneCondition = 0;
+  let specificity: number;
+  let scope: number;
+  let actionability: number;
+  let doneCondition: number;
 
   // Specificity: file paths, function names, specific identifiers
-  if (/[\/\\][\w.-]+\.\w+/.test(text) || /`[^`]+`/.test(text)) {
+  if (/[/\\][\w.-]+\.\w+/.test(text) || /`[^`]+`/.test(text)) {
     specificity = 25;
   } else if (/\b(file|component|function|class|module|test|route)\b/i.test(text)) {
     specificity = 15;

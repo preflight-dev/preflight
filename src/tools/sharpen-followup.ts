@@ -59,7 +59,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       // Vagueness detection
       const pronounPattern = /\b(it|them|this|that|those|the others?|these)\b/gi;
       const scopePattern = /\b(all|everything|the rest|everywhere|each one|every)\b/gi;
-      const hasPathRef = /[\/\\]|\.(?:ts|js|tsx|jsx|py|rs|go|md|json|yaml|yml|toml|css|html|sh)\b/.test(msg);
+      const hasPathRef = /[/\\]|\.(?:ts|js|tsx|jsx|py|rs|go|md|json|yaml|yml|toml|css|html|sh)\b/.test(msg);
       const isBareCommand = msg.length < 30 && !hasPathRef;
 
       const pronounMatches = [...new Set([...msg.matchAll(pronounPattern)].map(m => m[0].toLowerCase()))];

@@ -112,7 +112,7 @@ export function registerScanSessions(server: McpServer) {
           let size = 0;
           try {
             size = fs.statSync(f.path).size;
-          } catch {}
+          } catch { /* stat may fail for missing files */ }
 
           const firstLine = readFirstLine(f.path);
           const branch = extractBranchFromSession(firstLine);

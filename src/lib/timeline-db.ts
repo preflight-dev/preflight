@@ -32,7 +32,7 @@ export interface TimelineEvent {
   metadata?: string;
 }
 
-export interface TimelineRecord extends Required<TimelineEvent> {}
+export type TimelineRecord = Required<TimelineEvent>;
 
 export interface SearchOptions {
   project_dirs?: string[];

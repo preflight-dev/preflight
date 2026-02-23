@@ -38,14 +38,14 @@ async function getSearchProjects(scope: SearchScope): Promise<string[]> {
     case "current":
       return currentProject ? [currentProject] : [];
       
-    case "related":
+    case "related": {
       const related = getRelatedProjects();
       return currentProject ? [currentProject, ...related] : related;
-      
-    case "all":
+    }
+    case "all": {
       const projects = await listIndexedProjects();
       return projects.map(p => p.project);
-      
+    }
     default:
       return currentProject ? [currentProject] : [];
   }

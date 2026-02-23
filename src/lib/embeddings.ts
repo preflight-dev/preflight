@@ -15,7 +15,7 @@ export function preprocessText(text: string): string {
   // Strip markdown formatting
   t = t.replace(/```[\s\S]*?```/g, " "); // code blocks
   t = t.replace(/`[^`]+`/g, " "); // inline code
-  t = t.replace(/[#*_~>\[\]()!]/g, ""); // markdown chars
+  t = t.replace(/[#*_~>[\]()!]/g, ""); // markdown chars
   t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"); // links
   // Normalize whitespace
   t = t.replace(/\s+/g, " ").trim();

@@ -12,7 +12,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [
     "claude",
@@ -46,7 +48,12 @@
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.11",
-    "typescript": "^5.9.3"
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "eslint": "^10.0.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0"
   }
 }

@@ -63,7 +63,7 @@ ${dirty || "clean"}
         const shortSummary = summary.split("\n")[0].slice(0, 72);
         const commitMsg = `checkpoint: ${shortSummary}`;
 
-        let addCmd: string = "git add -u";
+        let addCmd: string;
         switch (mode) {
           case "staged": {
             const staged = getStagedFiles();

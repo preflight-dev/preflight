@@ -99,7 +99,7 @@ export function registerSequenceTasks(server: McpServer): void {
         }
 
         for (const item of classified) {
-          const pathTokens = item.task.match(/[\w\-\/]+\.\w+|[\w\-]+\/[\w\-\/]*/g) || [];
+          const pathTokens = item.task.match(/[\w-/]+\.\w+|[\w-]+\/[\w-/]*/g) || [];
           for (const token of pathTokens) {
             const dir = token.split("/").slice(0, 2).join("/");
             // Validate: must be a known git directory and safe path
@@ -115,7 +115,7 @@ export function registerSequenceTasks(server: McpServer): void {
       }
 
       let ordered: typeof classified;
-      let reasoning: string[] = [];
+      let reasoning: string[];
 
       if (strategy === "dependency") {
         ordered = [...classified].sort((a, b) => {
