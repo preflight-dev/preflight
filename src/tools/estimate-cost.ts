@@ -10,7 +10,7 @@ import { findSessionDirs, findSessionFiles } from "../lib/session-parser.js";
 
 // ── Pricing (per 1M tokens) ────────────────────────────────────────────────
 
-const PRICING: Record<string, { input: number; output: number }> = {
+export const PRICING: Record<string, { input: number; output: number }> = {
   "claude-sonnet-4": { input: 3.0, output: 15.0 },
   "claude-opus-4": { input: 15.0, output: 75.0 },
   "claude-haiku-3.5": { input: 0.8, output: 4.0 },
@@ -18,7 +18,7 @@ const PRICING: Record<string, { input: number; output: number }> = {
 
 const DEFAULT_MODEL = "claude-sonnet-4";
 
-const CORRECTION_SIGNALS = /\b(no[,.\s]|wrong|not that|i meant|actually|try again|revert|undo|that's not|not what i)\b/i;
+export const CORRECTION_SIGNALS = /\b(no[,.\s]|wrong|not that|i meant|actually|try again|revert|undo|that's not|not what i)\b/i;
 
 const PREFLIGHT_TOOLS = new Set([
   "preflight_check",
@@ -29,13 +29,13 @@ const PREFLIGHT_TOOLS = new Set([
   "prompt_score",
 ]);
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers (exported for testing) ───────────────────────────────────────────
 
-function estimateTokens(text: string): number {
+export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function extractText(content: unknown): string {
+export function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
@@ -46,25 +46,25 @@ function extractText(content: unknown): string {
   return "";
 }
 
-function extractToolNames(content: unknown): string[] {
+export function extractToolNames(content: unknown): string[] {
   if (!Array.isArray(content)) return [];
   return content
     .filter((b: any) => b.type === "tool_use" && b.name)
     .map((b: any) => b.name as string);
 }
 
-function formatTokens(n: number): string {
+export function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
 
-function formatCost(dollars: number): string {
+export function formatCost(dollars: number): string {
   if (dollars < 0.01) return `<$0.01`;
   return `$${dollars.toFixed(2)}`;
 }
 
-function formatDuration(ms: number): string {
+export function formatDuration(ms: number): string {
   const mins = Math.floor(ms / 60_000);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
