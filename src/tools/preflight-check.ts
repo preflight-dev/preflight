@@ -17,10 +17,27 @@ import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patter
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Known non-file tokens that look like file paths */
+const FALSE_POSITIVE_PATHS = new Set([
+  'node.js', 'next.js', 'vue.js', 'react.js', 'express.js', 'nest.js',
+  'bun.js', 'deno.js', 'nuxt.js', 'svelte.js', 'ember.js', 'angular.js',
+  'three.js', 'd3.js', 'p5.js', 'e2e.js',
+]);
+
 /** Extract file paths from prompt text */
-function extractFilePaths(prompt: string): string[] {
+export function extractFilePaths(prompt: string): string[] {
+  // Match sequences that look like paths: must contain a slash OR a known code extension
+  const CODE_EXTENSIONS = /\.(ts|tsx|js|jsx|mjs|cjs|json|yaml|yml|toml|md|css|scss|html|sql|sh|py|rb|go|rs|java|c|cpp|h|hpp|xml|env|lock|config|conf)$/;
   const matches = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
-  return [...new Set(matches)];
+  return [...new Set(
+    matches.filter(m => {
+      // Must have a slash (looks like a path) or a known code extension
+      if (FALSE_POSITIVE_PATHS.has(m.toLowerCase())) return false;
+      // Filter out version-like patterns: v1.2.3, 2.5x, etc.
+      if (/^v?\d+\.\d+/i.test(m)) return false;
+      return m.includes('/') || m.includes('\\') || CODE_EXTENSIONS.test(m);
+    })
+  )];
 }
 
 /** Verify files exist and return stats */
