@@ -151,6 +151,11 @@ export function getRelatedProjects(): string[] {
   return getConfig().related_projects.map(p => p.path);
 }
 
+/** Reset cached config (useful for tests and config reload) */
+export function resetConfig(): void {
+  _config = null;
+}
+
 /** Check if .preflight/ directory exists */
 export function hasPreflightConfig(): boolean {
   return existsSync(join(PROJECT_DIR, ".preflight"));
