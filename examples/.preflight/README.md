@@ -1,25 +1,36 @@
-# `.preflight/` Example Config
+# `.preflight/` Configuration
 
-Copy this directory into your project root to configure preflight:
-
-```bash
-cp -r examples/.preflight /path/to/your/project/
-```
+Drop this directory into your project root to customize preflight behavior.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `config.yml` | Main config — profile, related projects, thresholds, embeddings |
-| `triage.yml` | Triage rules — which keywords trigger which classification level |
-| `contracts/*.yml` | Manual contract definitions — supplement auto-extraction |
+| `config.yml` | Profile, related projects, thresholds, embedding provider |
+| `triage.yml` | Prompt classification rules and strictness |
 
 ## Quick Setup
 
-1. Copy the directory: `cp -r examples/.preflight ./`
-2. Edit `config.yml` — set your `related_projects` paths
-3. Edit `triage.yml` — add your domain-specific keywords to `always_check`
-4. Optionally add contracts in `contracts/` for planned or external APIs
-5. Commit `.preflight/` to your repo so your team shares the same config
+```bash
+# From your project root:
+cp -r /path/to/preflight/examples/.preflight .preflight
+```
 
-All fields are optional. Defaults work well out of the box — only customize what you need.
+Edit the files to match your project. All fields are optional — anything you omit uses sensible defaults.
+
+## Commit It
+
+`.preflight/` is designed to be checked into version control. Your whole team gets the same triage rules, thresholds, and cross-service awareness without any per-developer setup.
+
+## Environment Variable Fallback
+
+If no `.preflight/` directory exists, preflight falls back to environment variables:
+
+| Env Var | Maps to |
+|---------|---------|
+| `PROMPT_DISCIPLINE_PROFILE` | `profile` in config.yml |
+| `PREFLIGHT_RELATED` | `related_projects` (comma-separated paths) |
+| `EMBEDDING_PROVIDER` | `embeddings.provider` in config.yml |
+| `OPENAI_API_KEY` | `embeddings.openai_api_key` in config.yml |
+
+When `.preflight/` exists, env vars are ignored (config files take precedence).

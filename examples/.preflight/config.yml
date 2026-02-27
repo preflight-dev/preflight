@@ -1,29 +1,34 @@
-# .preflight/config.yml — drop this in your project root
-# All fields are optional. Defaults are sensible.
-# See: https://github.com/TerminalGravity/preflight#configuration-reference
+# .preflight/config.yml — Team-shareable preflight configuration
+# Copy this directory into your project root to customize behavior.
+# All fields are optional — defaults are shown below.
 
-# Profile controls overall verbosity
-# "minimal" — only flag ambiguous+, skip clarification detail
-# "standard" — default behavior
-# "full" — maximum detail on every non-trivial prompt
+# Profile controls how aggressively preflight checks prompts:
+#   minimal  — only catch clearly vague prompts (<20 chars, no refs)
+#   standard — catch vague prompts + enforce structure (default)
+#   full     — strict checking + cross-service contracts + cost estimation
 profile: standard
 
-# Related projects for cross-service awareness
-# Preflight will search these projects' indexes when your prompt
-# touches shared contracts (types, routes, schemas).
+# Related projects for cross-service contract awareness.
+# preflight will extract types, routes, and schemas from these paths
+# so it can warn when a change in your project might break a sibling.
 related_projects:
-  # - path: /absolute/path/to/auth-service
-  #   alias: auth-service
-  # - path: /absolute/path/to/shared-types
-  #   alias: shared-types
+  # - path: ../api-server
+  #   alias: api
+  # - path: ../shared-types
+  #   alias: types
 
-# Behavioral thresholds
+# Tuning knobs
 thresholds:
-  session_stale_minutes: 30           # warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100  # suggest checkpoint after N tool calls
-  correction_pattern_threshold: 3     # min corrections before forming a pattern
+  # Minutes before a session is considered stale (triggers context recap)
+  session_stale_minutes: 30
+  # Tool calls before preflight suggests a checkpoint/commit
+  max_tool_calls_before_checkpoint: 100
+  # How many times a correction pattern must recur before warning
+  correction_pattern_threshold: 3
 
-# Embedding configuration
+# Embedding provider for timeline search (session history vector search)
 embeddings:
-  provider: local          # "local" (Xenova, zero config) or "openai"
-  # openai_api_key: sk-... # only needed if provider is "openai"
+  # "local" — zero-config, uses built-in embeddings (no API key needed)
+  # "openai" — higher quality, requires OPENAI_API_KEY env var
+  provider: local
+  # openai_api_key: sk-...  # or set OPENAI_API_KEY env var

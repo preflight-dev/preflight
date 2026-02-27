@@ -1,38 +1,40 @@
-# .preflight/triage.yml — controls the triage classification engine
-# Customize which prompts get flagged, skipped, or escalated.
+# .preflight/triage.yml — Customize prompt triage rules
+# Controls how preflight classifies incoming prompts.
+
+# Strictness level:
+#   relaxed  — only flag very short/vague prompts
+#   standard — balanced (default)
+#   strict   — flag anything without explicit file refs or scope
+strictness: standard
 
 rules:
-  # Prompts containing these words → always at least AMBIGUOUS
-  # Add domain terms that are too vague without context
+  # Keywords that ALWAYS trigger a clarification check, even in longer prompts.
+  # Use for high-risk areas where vague instructions are costly.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    # - billing        # uncomment for your domain
-    # - onboarding
+    - billing
+    - auth
+    # - payments      # uncomment for your domain
+    # - deploy
 
-  # Prompts containing these words → TRIVIAL (pass through immediately)
-  # Common low-risk commands that don't need analysis
+  # Keywords that SKIP triage entirely (low-risk, unambiguous commands).
   skip:
     - commit
     - format
     - lint
     - "git status"
-    - "git log"
+    - "npm test"
+    - "type-check"
 
-  # Prompts containing these words → CROSS-SERVICE
-  # Triggers search across related_projects defined in config.yml
+  # Keywords that trigger cross-service contract analysis.
+  # When detected, preflight checks related_projects for shared types/routes.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    # - payment
-    # - analytics
-
-# How aggressively to classify
-# "relaxed"  — more prompts pass as clear (faster, less interruption)
-# "standard" — balanced (recommended)
-# "strict"   — more prompts flagged as ambiguous (thorough, more interruptions)
-strictness: standard
+    - api
+    - graphql
