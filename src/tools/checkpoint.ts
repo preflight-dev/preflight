@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { writeFileSync, existsSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
 import { run, getBranch, getStatus, getLastCommit, getStagedFiles } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { appendLog, now } from "../lib/state.js";

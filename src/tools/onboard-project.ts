@@ -5,9 +5,7 @@ import * as path from "path";
 import { 
   insertEvents, 
   getLastIndexedTimestamp, 
-  listIndexedProjects, 
   getEventsTable,
-  registerProject,
   loadProjectMeta,
   saveProjectMeta 
 } from "../lib/timeline-db.js";
