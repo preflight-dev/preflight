@@ -106,11 +106,23 @@ describe("triagePrompt", () => {
   });
 
   it("pattern match count boosts level to ambiguous", () => {
-    // A prompt that would normally be clear
-    const config: TriageConfig = { patternMatchCount: 3 };
-    // patternMatchCount is declared in config but triagePrompt doesn't use it
-    // directly — it's used by the caller. This test verifies the config type.
-    expect(config.patternMatchCount).toBe(3);
+    // A prompt that would normally be "clear" gets bumped to "ambiguous"
+    // when correction patterns indicate this kind of prompt has caused issues before
+    const result = triagePrompt(
+      "fix the null check in src/auth/jwt.ts line 42",
+      { patternMatchCount: 3 },
+    );
+    expect(result.level).toBe("ambiguous");
+    expect(result.reasons[0]).toContain("correction patterns matched");
+    expect(result.recommended_tools).toContain("clarify-intent");
+  });
+
+  it("pattern match count below threshold does not boost", () => {
+    const result = triagePrompt(
+      "fix the null check in src/auth/jwt.ts line 42",
+      { patternMatchCount: 1 },
+    );
+    expect(result.level).toBe("clear");
   });
 
   // --- hasVagueVerbs behavior (tested indirectly) ---

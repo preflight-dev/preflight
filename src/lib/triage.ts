@@ -239,6 +239,17 @@ export function triagePrompt(
     };
   }
 
+  // 6b. Pattern match boost — if correction patterns matched, bump to ambiguous
+  if ((cfg.patternMatchCount ?? 0) >= 2) {
+    const patternReasons = [`${cfg.patternMatchCount} correction patterns matched this prompt`];
+    return {
+      level: 'ambiguous',
+      confidence: 0.75,
+      reasons: patternReasons,
+      recommended_tools: ['clarify-intent', 'scope-work'],
+    };
+  }
+
   // 7. Clear — specific, well-formed prompt
   if (hasFileRefs(prompt)) reasons.push('references specific file paths');
   if (hasLineNumbers(prompt)) reasons.push('references specific line numbers');
