@@ -13,15 +13,11 @@ import { searchSemantic } from "../lib/timeline-db.js";
 import { basename, join } from "path";
 import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patterns.js";
 
+import { extractFilePaths, detectAmbiguity, estimateComplexity, splitSubtasks } from "../lib/preflight.js";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Extract file paths from prompt text */
-function extractFilePaths(prompt: string): string[] {
-  const matches = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
-  return [...new Set(matches)];
-}
 
 /** Verify files exist and return stats */
 function verifyFiles(paths: string[]): string[] {
@@ -104,10 +100,7 @@ function buildClarifySection(prompt: string): string[] {
   }
 
   // Ambiguity signals
-  const issues: string[] = [];
-  if (/\b(it|them|the thing|that|those|this|these)\b/i.test(prompt)) issues.push("Contains vague pronouns — clarify what 'it'/'them' refers to");
-  if (/\b(fix|update|change|refactor|improve)\b/i.test(prompt) && !extractFilePaths(prompt).length) issues.push("Vague verb without specific file targets");
-  if (prompt.trim().length < 40) issues.push("Very short prompt — likely missing context");
+  const issues = detectAmbiguity(prompt);
 
   if (issues.length > 0) {
     sections.push(`### ⚠️ Clarification Needed\n${issues.map(i => `- ${i}`).join("\n")}`);
@@ -127,9 +120,7 @@ function buildScopeSection(prompt: string): string[] {
   }
 
   // Estimate complexity
-  const hasMultipleFiles = filePaths.length > 3;
-  const hasMultipleDirs = new Set(filePaths.map(f => f.split("/")[0])).size > 2;
-  const complexity = hasMultipleFiles && hasMultipleDirs ? "LARGE" : filePaths.length > 1 ? "MEDIUM" : "SMALL";
+  const complexity = estimateComplexity(filePaths);
   sections.push(`### Scope: ${complexity}`);
 
   return sections;
@@ -137,24 +128,8 @@ function buildScopeSection(prompt: string): string[] {
 
 /** Build sequence section for multi-step */
 function buildSequenceSection(prompt: string): string[] {
-  // Split prompt into sub-tasks
-  const subtasks: string[] = [];
-
-  // Split on "and", "then", numbered lists, bullet points
-  const parts = prompt
-    .split(/\b(?:then|after that|next|finally)\b|(?:,\s*and\s+)|(?:\band\b(?=\s+(?:update|add|remove|create|fix|change|refactor|implement|deploy)))/i)
-    .map(s => s.trim())
-    .filter(s => s.length > 5);
-
-  if (parts.length > 1) {
-    for (let i = 0; i < parts.length; i++) {
-      const risk = /schema|migrat|database|config|env|deploy/i.test(parts[i]) ? "🔴 HIGH" :
-                   /api|route|endpoint/i.test(parts[i]) ? "🟡 MEDIUM" : "🟢 LOW";
-      subtasks.push(`${i + 1}. ${parts[i].charAt(0).toUpperCase() + parts[i].slice(1)} — Risk: ${risk}`);
-    }
-  } else {
-    subtasks.push(`1. ${prompt.slice(0, 100)} — Risk: 🟡 MEDIUM`);
-  }
+  const tasks = splitSubtasks(prompt);
+  const subtasks = tasks.map((t, i) => `${i + 1}. ${t.task} — Risk: ${t.risk}`);
 
   return [
     `### Execution Plan`,
