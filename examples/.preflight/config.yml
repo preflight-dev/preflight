@@ -1,0 +1,29 @@
+# .preflight/config.yml — drop this in your project root
+# All fields are optional. Defaults are sensible.
+# See: https://github.com/TerminalGravity/preflight#configuration-reference
+
+# Profile controls overall verbosity
+# "minimal" — only flag ambiguous+, skip clarification detail
+# "standard" — default behavior
+# "full" — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service awareness
+# Preflight will search these projects' indexes when your prompt
+# touches shared contracts (types, routes, schemas).
+related_projects:
+  # - path: /absolute/path/to/auth-service
+  #   alias: auth-service
+  # - path: /absolute/path/to/shared-types
+  #   alias: shared-types
+
+# Behavioral thresholds
+thresholds:
+  session_stale_minutes: 30           # warn if no activity for this long
+  max_tool_calls_before_checkpoint: 100  # suggest checkpoint after N tool calls
+  correction_pattern_threshold: 3     # min corrections before forming a pattern
+
+# Embedding configuration
+embeddings:
+  provider: local          # "local" (Xenova, zero config) or "openai"
+  # openai_api_key: sk-... # only needed if provider is "openai"
