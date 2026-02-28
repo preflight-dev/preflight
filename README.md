@@ -76,21 +76,38 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: Claude Code CLI (fastest)
+### Option A: npm install (recommended)
 
 ```bash
-claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+npm install -g preflight-dev
+claude mcp add preflight -- preflight-dev
 ```
 
-With environment variables:
+Then run the setup wizard in your project directory:
 
 ```bash
+cd /path/to/your/project
+preflight-dev init
+```
+
+This creates a `.preflight/` config directory and wires up `CLAUDE_PROJECT_DIR` automatically.
+
+### Option B: Claude Code CLI (one-liner, no global install)
+
+Clone the repo, then register it directly:
+
+```bash
+git clone https://github.com/TerminalGravity/preflight.git
 claude mcp add preflight \
   -e CLAUDE_PROJECT_DIR=/path/to/your/project \
   -- npx tsx /path/to/preflight/src/index.ts
 ```
 
-### Option B: Clone & configure manually
+> **Note:** Replace `/path/to/preflight/` with the actual absolute path where you cloned the repo, and `/path/to/your/project` with the project you want preflight to analyze.
+
+### Option C: Manual `.mcp.json` config
+
+If you prefer editing config files directly:
 
 ```bash
 git clone https://github.com/TerminalGravity/preflight.git
@@ -104,9 +121,9 @@ Add to your project's `.mcp.json`:
   "mcpServers": {
     "preflight": {
       "command": "npx",
-      "args": ["tsx", "/path/to/preflight/src/index.ts"],
+      "args": ["tsx", "/absolute/path/to/preflight/src/index.ts"],
       "env": {
-        "CLAUDE_PROJECT_DIR": "/path/to/your/project"
+        "CLAUDE_PROJECT_DIR": "/absolute/path/to/your/project"
       }
     }
   }
@@ -114,13 +131,6 @@ Add to your project's `.mcp.json`:
 ```
 
 Restart Claude Code. The tools activate automatically.
-
-### Option C: npm (global)
-
-```bash
-npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
-```
 
 ---
 
