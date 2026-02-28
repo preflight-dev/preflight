@@ -1,34 +1,30 @@
-# .preflight/config.yml — Team-shareable preflight configuration
-# Copy this directory into your project root to customize behavior.
+# .preflight/config.yml
+# Copy this directory to your project root and customize.
 # All fields are optional — defaults are shown below.
 
-# Profile controls how aggressively preflight checks prompts:
-#   minimal  — only catch clearly vague prompts (<20 chars, no refs)
-#   standard — catch vague prompts + enforce structure (default)
-#   full     — strict checking + cross-service contracts + cost estimation
+# Profile controls how aggressively preflight intervenes:
+#   minimal  — only catch the most obvious vague prompts
+#   standard — balanced (default)
+#   full     — enforce structure on every prompt
 profile: standard
 
-# Related projects for cross-service contract awareness.
-# preflight will extract types, routes, and schemas from these paths
-# so it can warn when a change in your project might break a sibling.
+# Related projects for cross-service contract detection.
+# Preflight will scan these for shared types, routes, and schemas.
 related_projects:
   # - path: ../api-server
   #   alias: api
   # - path: ../shared-types
   #   alias: types
 
-# Tuning knobs
+# Thresholds for session management and pattern detection.
 thresholds:
-  # Minutes before a session is considered stale (triggers context recap)
-  session_stale_minutes: 30
-  # Tool calls before preflight suggests a checkpoint/commit
-  max_tool_calls_before_checkpoint: 100
-  # How many times a correction pattern must recur before warning
-  correction_pattern_threshold: 3
+  session_stale_minutes: 30            # Mark session stale after this long
+  max_tool_calls_before_checkpoint: 100 # Suggest checkpoint after N tool calls
+  correction_pattern_threshold: 3       # Warn after N similar corrections
 
-# Embedding provider for timeline search (session history vector search)
+# Embedding provider for semantic search over session history.
+#   local  — runs entirely offline, no API key needed (default)
+#   openai — higher quality, requires OPENAI_API_KEY in env
 embeddings:
-  # "local" — zero-config, uses built-in embeddings (no API key needed)
-  # "openai" — higher quality, requires OPENAI_API_KEY env var
   provider: local
   # openai_api_key: sk-...  # or set OPENAI_API_KEY env var

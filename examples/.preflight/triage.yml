@@ -1,40 +1,40 @@
-# .preflight/triage.yml — Customize prompt triage rules
-# Controls how preflight classifies incoming prompts.
+# .preflight/triage.yml
+# Customize how the triage decision tree classifies your prompts.
+# All fields are optional — defaults are shown below.
 
-# Strictness level:
-#   relaxed  — only flag very short/vague prompts
+# Strictness controls the ambiguity detection sensitivity:
+#   relaxed  — fewer interruptions, only flags very vague prompts
 #   standard — balanced (default)
-#   strict   — flag anything without explicit file refs or scope
+#   strict   — flags anything without explicit file refs or scope
 strictness: standard
 
 rules:
-  # Keywords that ALWAYS trigger a clarification check, even in longer prompts.
-  # Use for high-risk areas where vague instructions are costly.
+  # Keywords that ALWAYS trigger deeper inspection, even in short prompts.
+  # Add domain-specific terms where mistakes are expensive.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    - billing
-    - auth
-    # - payments      # uncomment for your domain
-    # - deploy
+    # - billing
+    # - delete
+    # - production
 
-  # Keywords that SKIP triage entirely (low-risk, unambiguous commands).
+  # Keywords that mark a prompt as trivial (no inspection needed).
+  # These are low-risk commands that don't benefit from preflight checks.
   skip:
     - commit
     - format
     - lint
-    - "git status"
-    - "npm test"
-    - "type-check"
+    # - typecheck
+    # - test
 
-  # Keywords that trigger cross-service contract analysis.
-  # When detected, preflight checks related_projects for shared types/routes.
+  # Keywords that trigger cross-service contract scanning.
+  # When detected, preflight looks for shared types/routes across related_projects.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - api
-    - graphql
+    # - payment
+    # - queue
