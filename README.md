@@ -606,6 +606,78 @@ src/
     └── ...                  # One file per tool
 ```
 
+## Troubleshooting
+
+### Tools don't show up in Claude Code
+
+**Symptom:** You added the MCP config but Claude doesn't see any preflight tools.
+
+1. Make sure you restarted Claude Code after editing `.mcp.json`
+2. Check the path in your config is absolute, not relative — `npx tsx /Users/you/preflight/src/index.ts`
+3. Run the server directly to check for startup errors:
+   ```bash
+   npx tsx /path/to/preflight/src/index.ts
+   ```
+   If it crashes on startup, the error will tell you what's missing.
+
+### LanceDB / timeline search not working
+
+**Symptom:** `search_timeline` returns empty results or errors about the database.
+
+- LanceDB stores data in `~/.preflight/projects/<project>/timeline.lance/`
+- You need to **ingest sessions first** — run `preflight_onboard_project` with your project dir, or use the CLI: `preflight-dev init`
+- If you get native module errors, make sure your Node version matches your OS architecture (especially on Apple Silicon — don't use x64 Node via Rosetta)
+- To reset a corrupt database, delete the `.lance` directory and re-ingest:
+  ```bash
+  rm -rf ~/.preflight/projects/YOUR_PROJECT/timeline.lance
+  ```
+
+### `CLAUDE_PROJECT_DIR` not set
+
+**Symptom:** Tools that need project context (contracts, file search) return nothing useful.
+
+Set it in your `.mcp.json` env block:
+```json
+"env": {
+  "CLAUDE_PROJECT_DIR": "/absolute/path/to/your/project"
+}
+```
+Or export it before running Claude Code:
+```bash
+export CLAUDE_PROJECT_DIR=/path/to/your/project
+claude
+```
+
+### `preflight_check` says everything is "TRIVIAL"
+
+This is by design for short, unambiguous commands like `git status` or `ls`. The triage engine only flags prompts that are genuinely ambiguous. If you want stricter checking, add keywords to `always_check` in `.preflight/triage.yml`:
+
+```yaml
+always_check:
+  - refactor
+  - update
+  - change
+```
+
+### npm global install: `preflight-dev: command not found`
+
+After `npm install -g preflight-dev`, your shell may not see the new binary. Try:
+```bash
+# Check where npm puts global bins
+npm bin -g
+# Make sure that directory is in your PATH
+export PATH="$(npm bin -g):$PATH"
+```
+
+### High memory usage during session ingestion
+
+Large JSONL session files (100MB+) can spike memory. Set `NODE_OPTIONS` to increase the heap:
+```bash
+NODE_OPTIONS="--max-old-space-size=4096" npx tsx src/index.ts
+```
+
+---
+
 ## License
 
 MIT — do whatever you want with it.
