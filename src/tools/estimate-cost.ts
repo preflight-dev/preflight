@@ -164,11 +164,8 @@ function analyzeSessionFile(filePath: string): SessionAnalysis {
       const tokens = estimateTokens(text);
       result.inputTokens += tokens;
 
-      // Check if this is a preflight tool result
-      if (obj.tool_use_id) {
-        // We can't perfectly match tool_use_id to name, so count tokens as preflight
-        // if they're small (typical preflight responses)
-      }
+      // Note: tool_result doesn't carry the tool name, so we can't attribute
+      // these tokens to preflight without a tool_use_id → name mapping.
     }
   }
 
