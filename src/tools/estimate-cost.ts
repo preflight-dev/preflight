@@ -39,7 +39,7 @@ function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .filter((b: any) => typeof b.text === "string")
+      .filter((b: any) => b.type === "text" && typeof b.text === "string")
       .map((b: any) => b.text)
       .join("\n");
   }
@@ -72,7 +72,7 @@ function formatDuration(ms: number): string {
   return `${hours}h ${rem}m`;
 }
 
-interface SessionAnalysis {
+export interface SessionAnalysis {
   inputTokens: number;
   outputTokens: number;
   promptCount: number;
@@ -85,7 +85,7 @@ interface SessionAnalysis {
   lastTimestamp: string | null;
 }
 
-function analyzeSessionFile(filePath: string): SessionAnalysis {
+export function analyzeSessionFile(filePath: string): SessionAnalysis {
   const content = readFileSync(filePath, "utf-8");
   const lines = content.trim().split("\n").filter(Boolean);
 
