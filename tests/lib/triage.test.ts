@@ -127,4 +127,41 @@ describe("triagePrompt", () => {
     const result = triagePrompt("fix the bug");
     expect(result.level).toBe("ambiguous");
   });
+
+  // --- Multi-step + Cross-service ---
+
+  it("detects multi-step AND cross-service together", () => {
+    const config: TriageConfig = {
+      crossServiceKeywords: ["webhook"],
+      relatedAliases: ["billing-api"],
+    };
+    const result = triagePrompt(
+      "refactor the auth module to use OAuth2 then update the webhook handler in billing-api",
+      config,
+    );
+    expect(result.level).toBe("multi-step");
+    expect(result.cross_service_hits).toBeDefined();
+    expect(result.cross_service_hits!.length).toBeGreaterThan(0);
+    expect(result.reasons.some(r => r.includes("cross-service"))).toBe(true);
+    expect(result.reasons.some(r => r.includes("multi-step"))).toBe(true);
+    expect(result.recommended_tools).toContain("search-related-projects");
+    expect(result.recommended_tools).toContain("sequence-tasks");
+  });
+
+  it("multi-step without cross-service has no cross_service_hits", () => {
+    const result = triagePrompt(
+      "add input validation to the form then write unit tests for it",
+    );
+    expect(result.level).toBe("multi-step");
+    expect(result.cross_service_hits).toBeUndefined();
+  });
+
+  it("cross-service without multi-step returns cross-service level", () => {
+    const config: TriageConfig = {
+      crossServiceKeywords: ["webhook"],
+    };
+    const result = triagePrompt("check the webhook payload format", config);
+    expect(result.level).toBe("cross-service");
+    expect(result.cross_service_hits).toBeDefined();
+  });
 });

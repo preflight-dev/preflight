@@ -174,15 +174,30 @@ export function triagePrompt(
     }
   }
 
-  // 2. Multi-step (check early — highest complexity)
-  if (isMultiStep(prompt)) {
+  // 2. Detect multi-step and cross-service signals (both can co-occur)
+  const multiStep = isMultiStep(prompt);
+  const csHits = detectCrossService(prompt, cfg);
+
+  if (multiStep && csHits.length > 0) {
+    // Both multi-step AND cross-service — highest complexity
+    reasons.push('contains multi-step indicators');
+    reasons.push(`cross-service indicators: ${csHits.join(', ')}`);
+    tools.push('clarify-intent', 'scope-work', 'sequence-tasks', 'search-related-projects');
+    return {
+      level: 'multi-step',
+      confidence: 0.9,
+      reasons,
+      recommended_tools: tools,
+      cross_service_hits: csHits,
+    };
+  }
+
+  if (multiStep) {
     reasons.push('contains multi-step indicators');
     tools.push('clarify-intent', 'scope-work', 'sequence-tasks');
     return { level: 'multi-step', confidence: 0.85, reasons, recommended_tools: tools };
   }
 
-  // 3. Cross-service
-  const csHits = detectCrossService(prompt, cfg);
   if (csHits.length > 0) {
     reasons.push(`cross-service indicators: ${csHits.join(', ')}`);
     tools.push('clarify-intent', 'scope-work', 'search-related-projects');
