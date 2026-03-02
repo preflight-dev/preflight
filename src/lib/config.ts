@@ -146,6 +146,12 @@ export function getConfig(): PreflightConfig {
   return _config;
 }
 
+/** Reset cached config — forces reload on next getConfig() call.
+ *  Useful for tests and long-running sessions where config may change. */
+export function resetConfig(): void {
+  _config = null;
+}
+
 /** Get related projects as simple path array (backward compatibility) */
 export function getRelatedProjects(): string[] {
   return getConfig().related_projects.map(p => p.path);
