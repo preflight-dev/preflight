@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getStatus } from "../lib/git.js";
+import { run, shellRun, getStatus } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -34,7 +34,7 @@ function detectTestRunner(): string | null {
 /** Check if a build script exists in package.json */
 function hasBuildScript(): boolean {
   try {
-    const pkg = JSON.parse(run("cat package.json 2>/dev/null"));
+    const pkg = JSON.parse(shellRun("cat package.json 2>/dev/null"));
     return !!pkg?.scripts?.build;
   } catch { return false; }
 }
@@ -80,7 +80,7 @@ export function registerVerifyCompletion(server: McpServer): void {
       // 3. Tests
       if (!skip_tests) {
         const runner = detectTestRunner();
-        const changedFiles = run("git diff --name-only HEAD~1 2>/dev/null").split("\n").filter(Boolean);
+        const changedFiles = shellRun("git diff --name-only HEAD~1 2>/dev/null").split("\n").filter(Boolean);
         let testCmd = "";
 
         if (runner === "playwright") {
