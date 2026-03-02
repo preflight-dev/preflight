@@ -1,6 +1,5 @@
 import { execFileSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
-import type { RunError } from "../types.js";
 
 /**
  * Run a git command safely using execFileSync (no shell injection).
@@ -28,11 +27,6 @@ export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {
     if (e.code === "ENOENT") return "[git not found]";
     return `[command failed: git ${args.join(" ")} (exit ${e.status ?? "?"})]`;
   }
-}
-
-/** Convenience: run a raw command string (split on spaces). Only for simple, known-safe commands. */
-function gitCmd(cmdStr: string, opts?: { timeout?: number }): string {
-  return run(cmdStr.split(/\s+/), opts);
 }
 
 /** Get the current branch name. */

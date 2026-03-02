@@ -73,7 +73,7 @@ function validateRelatedProjects(): void {
 }
 
 // Load config and validate related projects on startup
-const config = getConfig();
+getConfig(); // validate config on startup
 validateRelatedProjects();
 
 const profile = getProfile();

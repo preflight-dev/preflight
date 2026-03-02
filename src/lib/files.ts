@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join } from "path";
-import type { DocInfo, DocMeta } from "../types.js";
+import type { DocInfo } from "../types.js";
 
 /** Single source of truth for the project directory. */
 export const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || process.cwd();

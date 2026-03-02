@@ -146,7 +146,7 @@ export function matchPatterns(
   patterns: CorrectionPattern[],
 ): CorrectionPattern[] {
   if (patterns.length === 0) return [];
-  const promptKeywords = extractKeywords(prompt);
+  // keywords extracted inline below
   const promptLower = prompt.toLowerCase();
 
   return patterns.filter((p) => {
