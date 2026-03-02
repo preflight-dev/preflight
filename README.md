@@ -76,21 +76,36 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: Claude Code CLI (fastest)
+### Option A: npx (zero install — fastest)
+
+One command, nothing to clone or install:
 
 ```bash
-claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+claude mcp add preflight -- npx -y preflight-dev
 ```
 
-With environment variables:
+With your project directory (recommended — enables contracts, file search, and context-aware triage):
 
 ```bash
 claude mcp add preflight \
   -e CLAUDE_PROJECT_DIR=/path/to/your/project \
-  -- npx tsx /path/to/preflight/src/index.ts
+  -- npx -y preflight-dev
 ```
 
-### Option B: Clone & configure manually
+Restart Claude Code. All 24 tools activate automatically.
+
+### Option B: npm global install
+
+Install once, available everywhere:
+
+```bash
+npm install -g preflight-dev
+claude mcp add preflight -- preflight-dev
+```
+
+### Option C: Clone & configure manually
+
+Best for contributors or if you want to modify preflight itself:
 
 ```bash
 git clone https://github.com/TerminalGravity/preflight.git
@@ -104,9 +119,9 @@ Add to your project's `.mcp.json`:
   "mcpServers": {
     "preflight": {
       "command": "npx",
-      "args": ["tsx", "/path/to/preflight/src/index.ts"],
+      "args": ["tsx", "/absolute/path/to/preflight/src/index.ts"],
       "env": {
-        "CLAUDE_PROJECT_DIR": "/path/to/your/project"
+        "CLAUDE_PROJECT_DIR": "/absolute/path/to/your/project"
       }
     }
   }
@@ -115,12 +130,7 @@ Add to your project's `.mcp.json`:
 
 Restart Claude Code. The tools activate automatically.
 
-### Option C: npm (global)
-
-```bash
-npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
-```
+> **Note:** Paths in `.mcp.json` must be absolute — relative paths won't resolve correctly.
 
 ---
 
