@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "preflight-dev": "./bin/cli.js"
+    "preflight-dev": "./bin/cli.js",
+    "preflight-serve": "./bin/serve.js"
   },
   "engines": {
     "node": ">=18"
