@@ -562,6 +562,120 @@ flowchart TB
 
 ---
 
+## Troubleshooting
+
+<details>
+<summary><strong>LanceDB fails to install or throws native module errors</strong></summary>
+
+LanceDB uses native binaries. If `npm install` fails with compilation errors:
+
+```bash
+# Make sure you're on Node 20+
+node --version
+
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# On Apple Silicon Macs, ensure you're running native arm64 Node (not Rosetta)
+node -p process.arch   # should print "arm64"
+```
+
+If you see `Error: Cannot find module '@lancedb/lancedb-darwin-arm64'` (or similar platform-specific package), your platform may not have prebuilt binaries. Check [LanceDB compatibility](https://lancedb.github.io/lancedb/guides/tables/).
+
+</details>
+
+<details>
+<summary><strong>First run hangs or is very slow (Xenova model download)</strong></summary>
+
+On first use with local embeddings, preflight downloads the [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) model (~90MB). This happens once and can take 1-2 minutes on slower connections.
+
+The model is cached at `~/.cache/huggingface/` (Linux/macOS). If the download stalls:
+
+```bash
+# Verify network access to Hugging Face
+curl -I https://huggingface.co
+
+# Or switch to OpenAI embeddings to skip the local model entirely
+export OPENAI_API_KEY=sk-...
+export EMBEDDING_PROVIDER=openai
+```
+
+</details>
+
+<details>
+<summary><strong>"CLAUDE_PROJECT_DIR is required" or tools return empty results</strong></summary>
+
+Most tools need to know which project to analyze. Set this when adding the MCP server:
+
+```bash
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/absolute/path/to/your/project \
+  -- npx tsx /path/to/preflight/src/index.ts
+```
+
+Or in `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "preflight": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/preflight/src/index.ts"],
+      "env": {
+        "CLAUDE_PROJECT_DIR": "/absolute/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+**Must be an absolute path.** Relative paths like `./` won't resolve correctly.
+
+</details>
+
+<details>
+<summary><strong>No session data found / onboard_project indexes 0 events</strong></summary>
+
+Preflight reads Claude Code's session JSONL files from `~/.claude/projects/`. If no data is found:
+
+1. **Verify sessions exist:** `ls ~/.claude/projects/` — you should see encoded directory names
+2. **Check the right project:** The encoded path must match your `CLAUDE_PROJECT_DIR`. Claude Code encodes the absolute path — if you moved the project, old sessions won't be found.
+3. **Use Claude Code first:** You need at least one Claude Code session in the project before there's anything to index.
+
+</details>
+
+<details>
+<summary><strong>OpenAI embeddings fail with 401/403</strong></summary>
+
+```bash
+# Verify your key works
+curl https://api.openai.com/v1/models \
+  -H "Authorization: Bearer $OPENAI_API_KEY" | head -c 200
+
+# Check it's set in the MCP server environment, not just your shell
+# Add it to .mcp.json env or use: claude mcp add preflight -e OPENAI_API_KEY=sk-...
+```
+
+The embeddings endpoint uses `text-embedding-3-small`. Make sure your API key has access to this model.
+
+</details>
+
+<details>
+<summary><strong>Node version errors</strong></summary>
+
+Preflight requires **Node 20+**. Check with:
+
+```bash
+node --version
+```
+
+If you're using `nvm`, `fnm`, or similar, make sure the right version is active in the shell where Claude Code runs — not just your terminal.
+
+</details>
+
+---
+
 ## Contributing
 
 This project is young and there's plenty to do. Check the [issues](https://github.com/TerminalGravity/preflight/issues) — several are tagged `good first issue`.
