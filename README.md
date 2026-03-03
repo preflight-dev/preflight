@@ -406,6 +406,8 @@ This prevents the common failure mode: changing a shared type in one service and
 
 ## Configuration Reference
 
+> **Want a ready-to-use starting point?** Copy the [`examples/.preflight/`](examples/.preflight/) directory into your project root and customize it. See [`examples/.preflight/README.md`](examples/.preflight/README.md) for details.
+
 ### `.preflight/config.yml`
 
 Drop this in your project root. Every field is optional — defaults are sensible.

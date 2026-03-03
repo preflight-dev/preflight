@@ -1,0 +1,39 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+#
+# These supplement auto-extracted contracts from your codebase.
+# Useful for documenting APIs that preflight can't auto-detect,
+# or for pinning definitions that shouldn't drift.
+#
+# When a prompt touches these contracts, preflight surfaces them
+# so Claude has the right types before writing code.
+
+- name: User
+  kind: interface
+  description: Core user model shared across services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: teamId
+      type: string
+      required: false
+
+- name: ApiResponse
+  kind: interface
+  description: Standard API response wrapper
+  fields:
+    - name: success
+      type: boolean
+      required: true
+    - name: data
+      type: T
+      required: false
+    - name: error
+      type: "{ code: string, message: string }"
+      required: false

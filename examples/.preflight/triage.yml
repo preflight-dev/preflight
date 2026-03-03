@@ -1,0 +1,41 @@
+# .preflight/triage.yml — Controls the triage classification engine
+#
+# Triage decides how preflight handles each prompt:
+#   TRIVIAL       → pass through (e.g. "commit", "lint")
+#   CLEAR         → looks good, minimal checks
+#   AMBIGUOUS     → needs clarification before proceeding
+#   MULTI-STEP    → complex, needs scoping
+#   CROSS-SERVICE → touches multiple projects
+
+rules:
+  # Prompts containing these words → always at least AMBIGUOUS
+  # Add domain-specific terms that usually need clarification
+  always_check:
+    - rewards
+    - permissions
+    - migration
+    - schema
+    - billing
+    - deploy
+
+  # Prompts containing these → TRIVIAL (pass through without checks)
+  skip:
+    - commit
+    - format
+    - lint
+    - "git status"
+
+  # Prompts containing these → CROSS-SERVICE
+  # (triggers search across related_projects from config.yml)
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    - shared-types
+
+# How aggressively to classify:
+#   "relaxed"  — more prompts pass as clear
+#   "standard" — balanced
+#   "strict"   — more prompts flagged as ambiguous
+strictness: standard
