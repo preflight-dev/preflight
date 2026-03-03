@@ -1,11 +1,11 @@
 import * as lancedb from "@lancedb/lancedb";
 import { randomUUID } from "node:crypto";
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { join, basename, resolve } from "node:path";
-import { createEmbeddingProvider, type EmbeddingProvider, type EmbeddingConfig } from "./embeddings.js";
-import type { ProjectMeta, ProjectRegistry, SearchScope } from "../types.js";
+import { createEmbeddingProvider, type EmbeddingProvider } from "./embeddings.js";
+import type { ProjectMeta, ProjectRegistry } from "../types.js";
 
 // --- Types ---
 
@@ -342,7 +342,7 @@ export async function searchSemantic(
           _score: 1 - (result._distance || 0),
         });
       }
-    } catch (error) {
+    } catch {
       // Skip projects that don't exist or have issues
       continue;
     }
