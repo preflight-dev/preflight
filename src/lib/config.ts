@@ -155,3 +155,14 @@ export function getRelatedProjects(): string[] {
 export function hasPreflightConfig(): boolean {
   return existsSync(join(PROJECT_DIR, ".preflight"));
 }
+
+/** Load .preflight/rules.md content, or null if not present. */
+export function loadRules(): string | null {
+  const rulesPath = join(PROJECT_DIR, ".preflight", "rules.md");
+  if (!existsSync(rulesPath)) return null;
+  try {
+    return readFileSync(rulesPath, "utf-8");
+  } catch {
+    return null;
+  }
+}

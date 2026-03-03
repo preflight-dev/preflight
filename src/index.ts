@@ -11,6 +11,7 @@ import { existsSync } from "fs";
 
 // Main entry point
 import { registerPreflightCheck } from "./tools/preflight-check.js";
+import { registerPreflightInit } from "./tools/preflight-init.js";
 // Category 1: Plans
 import { registerScopeWork } from "./tools/scope-work.js";
 // Category 2: Clarification
@@ -87,6 +88,7 @@ type RegisterFn = (server: McpServer) => void;
 
 const toolRegistry: Array<[string, RegisterFn]> = [
   ["preflight_check", registerPreflightCheck],
+  ["preflight_init", registerPreflightInit],
   ["scope_work", registerScopeWork],
   ["clarify_intent", registerClarifyIntent],
   ["enrich_agent_task", registerEnrichAgentTask],

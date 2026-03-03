@@ -8,7 +8,7 @@ import { PROJECT_DIR } from "../lib/files.js";
 import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
 import { now } from "../lib/state.js";
 import { findWorkspaceDocs } from "../lib/files.js";
-import { getConfig } from "../lib/config.js";
+import { getConfig, loadRules } from "../lib/config.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { basename, join } from "path";
 import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patterns.js";
@@ -222,6 +222,12 @@ export function registerPreflightCheck(server: McpServer): void {
         `_${ts} | Triage: **${effectiveLevel}** (confidence: ${triage.confidence.toFixed(2)})_`,
         `_Reasons: ${triage.reasons.join("; ")}_`,
       ];
+
+      // --- Project rules ---
+      const rules = loadRules();
+      if (rules) {
+        sections.push("", "## Project Rules (.preflight/rules.md)", rules.trim());
+      }
 
       // --- Pattern warnings ---
       if (patternMatches.length > 0) {

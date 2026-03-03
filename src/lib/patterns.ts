@@ -5,6 +5,9 @@
  */
 
 import { readLog, saveState, loadState } from "./state.js";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { PROJECT_DIR } from "./files.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -163,10 +166,34 @@ export function savePatterns(patterns: CorrectionPattern[]): void {
   saveState("patterns", { patterns, updated: new Date().toISOString() });
 }
 
-/** Load patterns from state. */
+/** Load patterns from state, merged with .preflight/patterns.json if present. */
 export function loadPatterns(): CorrectionPattern[] {
-  const state = loadState("patterns");
-  return (state.patterns as CorrectionPattern[]) || [];
+  const autoPatterns = (loadState("patterns").patterns as CorrectionPattern[]) || [];
+
+  // Merge version-controlled patterns from .preflight/patterns.json
+  const preflightPath = join(PROJECT_DIR, ".preflight", "patterns.json");
+  if (existsSync(preflightPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(preflightPath, "utf-8"));
+      const manual: CorrectionPattern[] = Array.isArray(raw) ? raw : (raw.patterns || []);
+      // Merge: manual patterns take precedence by id
+      const byId = new Map(autoPatterns.map(p => [p.id, p]));
+      for (const mp of manual) {
+        if (byId.has(mp.id)) {
+          // Manual overrides auto — merge frequency (keep higher)
+          const existing = byId.get(mp.id)!;
+          byId.set(mp.id, { ...existing, ...mp, frequency: Math.max(existing.frequency, mp.frequency) });
+        } else {
+          byId.set(mp.id, mp);
+        }
+      }
+      return [...byId.values()];
+    } catch {
+      // Silently fall back to auto patterns on parse error
+    }
+  }
+
+  return autoPatterns;
 }
 
 /**
