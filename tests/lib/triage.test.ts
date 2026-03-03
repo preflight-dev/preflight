@@ -105,12 +105,24 @@ describe("triagePrompt", () => {
     expect(strict.confidence).toBeLessThan(relaxed.confidence);
   });
 
-  it("pattern match count boosts level to ambiguous", () => {
-    // A prompt that would normally be clear
-    const config: TriageConfig = { patternMatchCount: 3 };
-    // patternMatchCount is declared in config but triagePrompt doesn't use it
-    // directly — it's used by the caller. This test verifies the config type.
-    expect(config.patternMatchCount).toBe(3);
+  it("pattern match count boosts clear prompts to ambiguous", () => {
+    // Without patterns: clear
+    const clear = triagePrompt("fix the null check in src/auth/jwt.ts line 42");
+    expect(clear.level).toBe("clear");
+
+    // With pattern matches: boosted to ambiguous
+    const boosted = triagePrompt("fix the null check in src/auth/jwt.ts line 42", {
+      patternMatchCount: 2,
+    });
+    expect(boosted.level).toBe("ambiguous");
+    expect(boosted.reasons.some((r) => r.includes("correction pattern"))).toBe(true);
+  });
+
+  it("pattern match count does not affect trivial skip-keyword prompts", () => {
+    const config: TriageConfig = { skip: ["commit"], patternMatchCount: 3 };
+    const result = triagePrompt("commit", config);
+    // skip keywords bail out before pattern check
+    expect(result.level).toBe("trivial");
   });
 
   // --- hasVagueVerbs behavior (tested indirectly) ---

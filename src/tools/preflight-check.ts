@@ -189,28 +189,23 @@ export function registerPreflightCheck(server: McpServer): void {
 
       // --- Triage ---
       const preflightConfig = getConfig();
+      // --- Pattern matching (before triage so count feeds into classification) ---
+      const patterns = loadPatterns();
+      const patternMatches = matchPatterns(prompt, patterns);
+
       const triageConfig = {
         alwaysCheck: preflightConfig.triage.rules.always_check,
         skip: preflightConfig.triage.rules.skip,
         crossServiceKeywords: preflightConfig.triage.rules.cross_service_keywords,
         strictness: preflightConfig.triage.strictness,
         relatedAliases: preflightConfig.related_projects.map(p => p.alias),
+        patternMatchCount: patternMatches.length,
       };
       const triage = triagePrompt(prompt, triageConfig);
       let effectiveLevel: TriageLevel = triage.level;
 
       if (force_level === "light") effectiveLevel = "ambiguous";
       if (force_level === "full") effectiveLevel = "multi-step";
-
-      // --- Pattern matching ---
-      const patterns = loadPatterns();
-      const patternMatches = matchPatterns(prompt, patterns);
-
-      // Boost triage level if patterns match
-      if (patternMatches.length > 0 && effectiveLevel === "trivial") {
-        effectiveLevel = "ambiguous";
-        triage.reasons.push(`matches ${patternMatches.length} known correction pattern(s)`);
-      }
 
       // --- Trivial ---
       if (effectiveLevel === "trivial") {

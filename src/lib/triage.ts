@@ -252,6 +252,18 @@ export function triagePrompt(
     clearTools.push('verify-files-exist');
   }
 
+  // Pattern match boost — if caller reports matched correction patterns,
+  // bump clear → ambiguous so the user gets a warning
+  if ((cfg.patternMatchCount ?? 0) > 0) {
+    reasons.push(`matches ${cfg.patternMatchCount} known correction pattern(s)`);
+    return {
+      level: 'ambiguous',
+      confidence: 0.75,
+      reasons,
+      recommended_tools: ['clarify-intent', 'scope-work'],
+    };
+  }
+
   return {
     level: 'clear',
     confidence: cfg.strictness === 'strict' ? 0.8 : 0.85,
