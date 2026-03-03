@@ -1,13 +1,13 @@
 // CATEGORY 1: scope_work — Plans
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getBranch, getRecentCommits, getStatus } from "../lib/git.js";
+import { run, getBranch, getRecentCommits } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
 import { now } from "../lib/state.js";
 import { existsSync } from "fs";
-import { join, normalize, resolve, basename } from "path";
+import { join, resolve, basename } from "path";
 import { loadAllContracts, searchContracts, formatContracts } from "../lib/contracts.js";
 
 const STOP_WORDS = new Set([
