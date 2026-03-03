@@ -36,10 +36,10 @@ function getTestFailures(): string {
     const fp = join(PROJECT_DIR, p);
     if (existsSync(fp)) {
       try {
-        const data = JSON.parse(readFileSync(fp, "utf-8"));
+        const data = JSON.parse(readFileSync(fp, "utf-8")) as { testResults?: Array<{ status: string; name: string }> };
         const failed = data.testResults
-          ?.filter((t: any) => t.status === "failed")
-          ?.map((t: any) => t.name) || [];
+          ?.filter((t) => t.status === "failed")
+          ?.map((t) => t.name) || [];
         return failed.length ? failed.join("\n") : "all passing";
       } catch { continue; }
     }

@@ -78,7 +78,7 @@ function loadConfig(): PreflightConfig {
   if (existsSync(configPath)) {
     try {
       const configYaml = readFileSync(configPath, "utf-8");
-      const configData = yamlLoad(configYaml) as any;
+      const configData = yamlLoad(configYaml) as Partial<PreflightConfig> | undefined;
       
       if (configData) {
         // Merge config data with defaults
@@ -96,7 +96,7 @@ function loadConfig(): PreflightConfig {
   if (existsSync(triagePath)) {
     try {
       const triageYaml = readFileSync(triagePath, "utf-8");
-      const triageData = yamlLoad(triageYaml) as any;
+      const triageData = yamlLoad(triageYaml) as Partial<PreflightConfig["triage"]> | undefined;
       
       if (triageData) {
         if (triageData.rules) config.triage.rules = { ...config.triage.rules, ...triageData.rules };

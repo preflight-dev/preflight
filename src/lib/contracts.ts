@@ -161,9 +161,13 @@ function extractOpenApiContracts(content: string, filePath: string, projectDir: 
   const now = new Date().toISOString();
 
   try {
-    const spec = filePath.endsWith(".json") ? JSON.parse(content) : yamlLoad(content) as any;
+    interface OpenApiSpec {
+      paths?: Record<string, Record<string, { summary?: string; parameters?: unknown; requestBody?: unknown }>>;
+      components?: { schemas?: Record<string, unknown> };
+    }
+    const spec: OpenApiSpec = filePath.endsWith(".json") ? JSON.parse(content) : yamlLoad(content) as OpenApiSpec;
     if (spec?.paths) {
-      for (const [path, methods] of Object.entries(spec.paths as Record<string, any>)) {
+      for (const [path, methods] of Object.entries(spec.paths)) {
         for (const method of Object.keys(methods)) {
           if (["get", "post", "put", "delete", "patch"].includes(method)) {
             const op = methods[method];

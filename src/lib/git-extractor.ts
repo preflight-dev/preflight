@@ -62,9 +62,10 @@ export function extractGitHistory(
       maxBuffer: 50 * 1024 * 1024,
       stdio: ["pipe", "pipe", "pipe"],
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     // No commits or other git error
-    if (err.stdout) output = err.stdout;
+    const execErr = err as { stdout?: string };
+    if (execErr.stdout) output = execErr.stdout;
     else return [];
   }
 

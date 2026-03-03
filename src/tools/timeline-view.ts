@@ -3,6 +3,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTimeline, listIndexedProjects } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
 import type { SearchScope } from "../types.js";
+import type { TimelineEvent } from "../lib/session-parser.js";
+
+/** Extended timeline event with optional fields populated by the DB layer */
+interface TimelineRecord extends TimelineEvent {
+  summary?: string;
+  commit_hash?: string;
+  tool_name?: string;
+}
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
@@ -102,7 +110,7 @@ export function registerTimeline(server: McpServer) {
       // Post-filter by author
       if (params.author) {
         const authorLower = params.author.toLowerCase();
-        events = events.filter((e: any) => {
+        events = events.filter((e: TimelineRecord) => {
           if (e.type !== "commit") return true; // only filter commits
           try {
             const meta = JSON.parse(e.metadata || "{}");
@@ -116,7 +124,7 @@ export function registerTimeline(server: McpServer) {
       }
 
       // Group by day
-      const days = new Map<string, any[]>();
+      const days = new Map<string, TimelineRecord[]>();
       for (const event of events) {
         const day = event.timestamp ? new Date(event.timestamp).toISOString().slice(0, 10) : "unknown";
         if (!days.has(day)) days.set(day, []);
@@ -141,7 +149,7 @@ export function registerTimeline(server: McpServer) {
         lines.push(`### ${day}`);
         const dayEvents = days.get(day)!;
         // Sort by timestamp within day
-        dayEvents.sort((a: any, b: any) => {
+        dayEvents.sort((a: TimelineRecord, b: TimelineRecord) => {
           const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
           const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
           return ta - tb;

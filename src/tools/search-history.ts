@@ -3,6 +3,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { searchSemantic, listIndexedProjects } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
 import type { SearchScope } from "../types.js";
+import type { TimelineEvent } from "../lib/session-parser.js";
+
+/** Search result with optional distance score from vector search */
+interface SearchResult extends TimelineEvent {
+  _distance?: number;
+  summary?: string;
+  commit_hash?: string;
+}
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
@@ -101,7 +109,7 @@ export function registerSearchHistory(server: McpServer) {
       // Post-filter by author (stored in metadata JSON)
       if (params.author) {
         const authorLower = params.author.toLowerCase();
-        results = results.filter((r: any) => {
+        results = results.filter((r: SearchResult) => {
           try {
             const meta = JSON.parse(r.metadata || "{}");
             return (meta.author || "").toLowerCase().includes(authorLower);
@@ -113,14 +121,14 @@ export function registerSearchHistory(server: McpServer) {
         return { content: [{ type: "text", text: `## Search Results for "${params.query}"\n_No results found._` }] };
       }
 
-      const projects = new Set(results.map((r: any) => r.project || "unknown"));
+      const projects = new Set(results.map((r: SearchResult) => r.project || "unknown"));
       const lines: string[] = [
         `## Search Results for "${params.query}"`,
         `_${results.length} result${results.length !== 1 ? "s" : ""} across ${projects.size} project${projects.size !== 1 ? "s" : ""}_`,
         "",
       ];
 
-      results.forEach((event: any, i: number) => {
+      results.forEach((event: SearchResult, i: number) => {
         const badge = TYPE_BADGES[event.type] || event.type;
         const ts = event.timestamp ? new Date(event.timestamp).toISOString().replace("T", " ").slice(0, 16) : "unknown";
         const proj = event.project || "unknown";

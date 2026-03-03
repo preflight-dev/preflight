@@ -2,6 +2,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, sta
 import { join } from "path";
 import { PROJECT_DIR } from "./files.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic JSON state needs flexible value types
+export type JsonRecord = Record<string, any>;
+
 export const STATE_DIR = join(PROJECT_DIR, ".claude", "preflight-state");
 
 /** Max log file size in bytes (5 MB). Triggers rotation. */
@@ -18,7 +21,7 @@ function ensureStateDir(): void {
  * Load a JSON state file by name (without extension).
  * Returns empty object if missing or corrupt.
  */
-export function loadState(name: string): Record<string, any> {
+export function loadState(name: string): JsonRecord {
   const p = join(STATE_DIR, `${name}.json`);
   if (!existsSync(p)) return {};
   try {
@@ -31,7 +34,7 @@ export function loadState(name: string): Record<string, any> {
 /**
  * Save a JSON state file by name (without extension).
  */
-export function saveState(name: string, data: Record<string, any>): void {
+export function saveState(name: string, data: JsonRecord): void {
   ensureStateDir();
   writeFileSync(join(STATE_DIR, `${name}.json`), JSON.stringify(data, null, 2));
 }
@@ -39,7 +42,7 @@ export function saveState(name: string, data: Record<string, any>): void {
 /**
  * Append a JSONL entry to a log file. Rotates if file exceeds MAX_LOG_SIZE.
  */
-export function appendLog(filename: string, entry: Record<string, any>): void {
+export function appendLog(filename: string, entry: JsonRecord): void {
   ensureStateDir();
   const logFile = join(STATE_DIR, filename);
 
@@ -62,7 +65,7 @@ export function appendLog(filename: string, entry: Record<string, any>): void {
  * Read a JSONL log file. Pass `lastN` to only return the last N entries
  * (still reads the file, but avoids allocating all parsed objects).
  */
-export function readLog(filename: string, lastN?: number): Record<string, any>[] {
+export function readLog(filename: string, lastN?: number): JsonRecord[] {
   const logFile = join(STATE_DIR, filename);
   if (!existsSync(logFile)) return [];
   try {
@@ -70,7 +73,7 @@ export function readLog(filename: string, lastN?: number): Record<string, any>[]
     if (!raw) return [];
     const lines = raw.split("\n");
     const subset = lastN != null && lastN > 0 ? lines.slice(-lastN) : lines;
-    const results: Record<string, any>[] = [];
+    const results: JsonRecord[] = [];
     for (const line of subset) {
       try { results.push(JSON.parse(line)); } catch { /* skip corrupt line */ }
     }

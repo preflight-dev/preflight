@@ -26,11 +26,16 @@ export function preprocessText(text: string): string {
 
 // --- Local Provider (Xenova/transformers) ---
 
-let extractor: any = null;
+/** Xenova feature-extraction pipeline instance */
+interface FeatureExtractor {
+  (text: string, options: { pooling: string; normalize: boolean }): Promise<{ data: Float32Array }>;
+}
 
-async function getExtractor(): Promise<any> {
+let extractor: FeatureExtractor | null = null;
+
+async function getExtractor(): Promise<FeatureExtractor> {
   if (!extractor) {
-    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2") as unknown as FeatureExtractor;
   }
   return extractor;
 }
@@ -90,9 +95,9 @@ class OpenAIEmbeddingProvider implements EmbeddingProvider {
         throw new Error(`OpenAI embeddings API error ${resp.status}: ${err}`);
       }
 
-      const data = await resp.json();
+      const data = await resp.json() as { data: Array<{ index: number; embedding: number[] }> };
       // Sort by index to preserve order
-      const sorted = data.data.sort((a: any, b: any) => a.index - b.index);
+      const sorted = data.data.sort((a, b) => a.index - b.index);
       for (const item of sorted) {
         results.push(item.embedding);
       }

@@ -36,20 +36,41 @@ const CORRECTION_PATTERNS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+/** A single record from a Claude Code JSONL session file */
+interface SessionRecord {
+  type?: string;
+  subtype?: string;
+  timestamp?: string | number;
+  message?: { content?: unknown };
+  content?: unknown;
+  model?: string;
+  gitBranch?: string;
+  sessionId?: string;
+  is_error?: boolean;
+  tool_use_id?: string;
+}
+
+interface ContentBlock {
+  type: string;
+  text?: string;
+  name?: string;
+  input?: unknown;
+}
+
 function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
-    return content
-      .filter((b: any) => b.type === "text" && typeof b.text === "string")
-      .map((b: any) => b.text)
+    return (content as ContentBlock[])
+      .filter((b) => b.type === "text" && typeof b.text === "string")
+      .map((b) => b.text!)
       .join("\n");
   }
   return "";
 }
 
-function extractToolUseBlocks(content: unknown): any[] {
+function extractToolUseBlocks(content: unknown): ContentBlock[] {
   if (!Array.isArray(content)) return [];
-  return content.filter((b: any) => b.type === "tool_use");
+  return (content as ContentBlock[]).filter((b) => b.type === "tool_use");
 }
 
 function normalizeTimestamp(ts: unknown, fallback: string): string {
@@ -185,9 +206,9 @@ export async function parseSessionAsync(
   for await (const line of rl) {
     lineNum++;
     if (!line.trim()) continue;
-    let obj: any;
+    let obj: SessionRecord;
     try {
-      obj = JSON.parse(line);
+      obj = JSON.parse(line) as SessionRecord;
     } catch {
       process.stderr.write(`[session-parser] malformed line ${lineNum} in ${filePath}\n`);
       continue;
@@ -220,9 +241,9 @@ function parseLinesSync(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-    let obj: any;
+    let obj: SessionRecord;
     try {
-      obj = JSON.parse(line);
+      obj = JSON.parse(line) as SessionRecord;
     } catch {
       process.stderr.write(`[session-parser] malformed line ${i + 1} in ${filePath}\n`);
       continue;
@@ -242,7 +263,7 @@ function parseLinesSync(
 }
 
 function processRecord(
-  obj: any,
+  obj: SessionRecord,
   filePath: string,
   project: string,
   projectName: string,

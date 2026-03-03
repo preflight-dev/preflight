@@ -35,12 +35,19 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
+interface ContentBlock {
+  type?: string;
+  text?: string;
+  name?: string;
+  input?: unknown;
+}
+
 function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
-    return content
-      .filter((b: any) => typeof b.text === "string")
-      .map((b: any) => b.text)
+    return (content as ContentBlock[])
+      .filter((b) => typeof b.text === "string")
+      .map((b) => b.text!)
       .join("\n");
   }
   return "";
@@ -48,9 +55,9 @@ function extractText(content: unknown): string {
 
 function extractToolNames(content: unknown): string[] {
   if (!Array.isArray(content)) return [];
-  return content
-    .filter((b: any) => b.type === "tool_use" && b.name)
-    .map((b: any) => b.name as string);
+  return (content as ContentBlock[])
+    .filter((b) => b.type === "tool_use" && b.name)
+    .map((b) => b.name!);
 }
 
 function formatTokens(n: number): string {
@@ -106,7 +113,7 @@ function analyzeSessionFile(filePath: string): SessionAnalysis {
   let lastAssistantTokens = 0;
 
   for (const line of lines) {
-    let obj: any;
+    let obj: { type?: string; timestamp?: string | number; message?: { content?: unknown }; content?: unknown; model?: string; is_error?: boolean; tool_use_id?: string };
     try {
       obj = JSON.parse(line);
     } catch {
@@ -148,8 +155,8 @@ function analyzeSessionFile(filePath: string): SessionAnalysis {
         if (PREFLIGHT_TOOLS.has(name)) {
           result.preflightCalls++;
           // Estimate tool call tokens (name + args)
-          const toolBlocks = (msgContent as any[]).filter(
-            (b: any) => b.type === "tool_use" && b.name === name,
+          const toolBlocks = (msgContent as ContentBlock[]).filter(
+            (b) => b.type === "tool_use" && b.name === name,
           );
           for (const tb of toolBlocks) {
             result.preflightTokens += estimateTokens(
