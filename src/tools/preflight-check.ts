@@ -1,17 +1,17 @@
 // Unified preflight_check — single entry point that triages and chains tools
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { triagePrompt, type TriageLevel, type TriageResult } from "../lib/triage.js";
+import { triagePrompt, type TriageLevel } from "../lib/triage.js";
 import { existsSync, statSync } from "fs";
 import { resolve } from "path";
 import { PROJECT_DIR } from "../lib/files.js";
-import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
+import { getBranch, getStatus, getRecentCommits } from "../lib/git.js";
 import { now } from "../lib/state.js";
 import { findWorkspaceDocs } from "../lib/files.js";
 import { getConfig } from "../lib/config.js";
 import { searchSemantic } from "../lib/timeline-db.js";
-import { basename, join } from "path";
-import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patterns.js";
+import { basename } from "path";
+import { loadPatterns, matchPatterns } from "../lib/patterns.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
