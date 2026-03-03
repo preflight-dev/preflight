@@ -430,8 +430,11 @@ thresholds:
 
 # Embedding configuration
 embeddings:
-  provider: local                          # type: "local" | "openai"
+  provider: local                          # type: "local" | "openai" | "ollama"
   openai_api_key: sk-...                   # type: string — only needed if provider is "openai"
+  ollama_base_url: http://localhost:11434   # type: string — only needed if provider is "ollama"
+  ollama_model: nomic-embed-text           # type: string — Ollama model name (default: nomic-embed-text)
+  ollama_dimensions: 768                   # type: number — embedding dimensions (default: 768)
 ```
 
 ### `.preflight/triage.yml`
@@ -495,7 +498,9 @@ Manual contract definitions that supplement auto-extraction:
 | `CLAUDE_PROJECT_DIR` | Project root to monitor | **Required** |
 | `OPENAI_API_KEY` | OpenAI key for embeddings | Uses local Xenova |
 | `PREFLIGHT_RELATED` | Comma-separated related project paths | None |
-| `EMBEDDING_PROVIDER` | `local` or `openai` | `local` |
+| `EMBEDDING_PROVIDER` | `local`, `openai`, or `ollama` | `local` |
+| `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Ollama embedding model | `nomic-embed-text` |
 | `PROMPT_DISCIPLINE_PROFILE` | `minimal`, `standard`, or `full` | `standard` |
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
