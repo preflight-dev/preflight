@@ -174,15 +174,27 @@ export function triagePrompt(
     }
   }
 
-  // 2. Multi-step (check early — highest complexity)
+  // 2. Detect cross-service early (used by multi-step too)
+  const csHits = detectCrossService(prompt, cfg);
+
+  // 3. Multi-step (highest complexity)
   if (isMultiStep(prompt)) {
     reasons.push('contains multi-step indicators');
     tools.push('clarify-intent', 'scope-work', 'sequence-tasks');
-    return { level: 'multi-step', confidence: 0.85, reasons, recommended_tools: tools };
+    if (csHits.length > 0) {
+      reasons.push(`cross-service indicators: ${csHits.join(', ')}`);
+      tools.push('search-related-projects');
+    }
+    return {
+      level: 'multi-step',
+      confidence: 0.85,
+      reasons,
+      recommended_tools: tools,
+      cross_service_hits: csHits.length > 0 ? csHits : undefined,
+    };
   }
 
-  // 3. Cross-service
-  const csHits = detectCrossService(prompt, cfg);
+  // 4. Cross-service
   if (csHits.length > 0) {
     reasons.push(`cross-service indicators: ${csHits.join(', ')}`);
     tools.push('clarify-intent', 'scope-work', 'search-related-projects');
@@ -195,7 +207,7 @@ export function triagePrompt(
     };
   }
 
-  // 4. always_check keywords → at least ambiguous
+  // 5. always_check keywords → at least ambiguous
   for (const kw of cfg.alwaysCheck ?? []) {
     if (lower(prompt).includes(lower(kw))) {
       reasons.push(`matches always_check keyword: "${kw}"`);
@@ -204,7 +216,7 @@ export function triagePrompt(
     }
   }
 
-  // 5. Trivial: short common commands
+  // 6. Trivial: short common commands
   if (len < 20 && isTrivialCommand(prompt)) {
     return {
       level: 'trivial',
@@ -214,7 +226,7 @@ export function triagePrompt(
     };
   }
 
-  // 6. Ambiguous signals
+  // 7. Ambiguous signals
   const ambiguousReasons: string[] = [];
   const promptHasFileRefs = hasFileRefs(prompt);
   const promptHasLineNumbers = hasLineNumbers(prompt);
@@ -239,7 +251,7 @@ export function triagePrompt(
     };
   }
 
-  // 7. Clear — specific, well-formed prompt
+  // 8. Clear — specific, well-formed prompt
   if (hasFileRefs(prompt)) reasons.push('references specific file paths');
   if (hasLineNumbers(prompt)) reasons.push('references specific line numbers');
   if (len > 50) reasons.push('detailed prompt with concrete nouns');
