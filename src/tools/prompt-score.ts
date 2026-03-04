@@ -40,7 +40,7 @@ interface ScoreResult {
   feedback: string[];
 }
 
-function scorePrompt(text: string): ScoreResult {
+export function scorePrompt(text: string): ScoreResult {
   const feedback: string[] = [];
   let specificity: number;
   let scope: number;
