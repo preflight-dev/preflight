@@ -3,14 +3,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { run, getBranch, getRecentCommits, getStatus } from "../lib/git.js";
+import { shell, hasCommand } from "../lib/shell.js";
 import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
 import { STATE_DIR, now } from "../lib/state.js";
-
-/** Check if a CLI tool is available */
-function hasCommand(cmd: string): boolean {
-  const result = run(`command -v ${cmd} 2>/dev/null`);
-  return !!result && !result.startsWith("[command failed");
-}
 
 export function registerSessionHandoff(server: McpServer): void {
   server.tool(
@@ -44,7 +39,7 @@ export function registerSessionHandoff(server: McpServer): void {
 
         // Only try gh if it exists
         if (hasCommand("gh")) {
-          const openPRs = run("gh pr list --state open --json number,title,headRefName 2>/dev/null || echo '[]'");
+          const openPRs = shell("gh pr list --state open --json number,title,headRefName 2>/dev/null || echo '[]'");
           if (openPRs && openPRs !== "[]") {
             sections.push(`## Open PRs\n\`\`\`json\n${openPRs}\n\`\`\``);
           }

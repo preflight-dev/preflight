@@ -2,6 +2,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
+import { shell } from "../lib/shell.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { loadState, saveState, now, STATE_DIR } from "../lib/state.js";
 import { readFileSync, existsSync, statSync } from "fs";
@@ -39,8 +40,8 @@ export function registerTokenAudit(server: McpServer): void {
       let wasteScore = 0;
 
       // 1. Git diff size & dirty file count
-      const diffStat = run("git diff --stat --no-color 2>/dev/null");
-      const dirtyFiles = run("git diff --name-only 2>/dev/null");
+      const diffStat = run(["diff", "--stat", "--no-color"]);
+      const dirtyFiles = run(["diff", "--name-only"]);
       const dirtyList = dirtyFiles.split("\n").filter(Boolean);
       const dirtyCount = dirtyList.length;
 
@@ -63,8 +64,11 @@ export function registerTokenAudit(server: McpServer): void {
 
       for (const f of dirtyList.slice(0, 30)) {
         // Use shell-safe quoting instead of interpolation
-        const wc = run(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
-        const lines = parseInt(wc) || 0;
+        let lines = 0;
+        try {
+          const content = readFileSync(join(PROJECT_DIR, f), "utf-8");
+          lines = content.split("\n").length;
+        } catch { /* file may not exist or be unreadable */ }
         estimatedContextTokens += lines * AVG_LINE_BYTES * AVG_TOKENS_PER_BYTE;
         if (lines > 500) {
           largeFiles.push(`${f} (${lines} lines)`);
@@ -80,8 +84,10 @@ export function registerTokenAudit(server: McpServer): void {
       // 3. CLAUDE.md bloat check
       const claudeMd = readIfExists("CLAUDE.md", 1);
       if (claudeMd !== null) {
-        const stat = run(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
-        const bytes = parseInt(stat) || 0;
+        let bytes = 0;
+        try {
+          bytes = statSync(join(PROJECT_DIR, "CLAUDE.md")).size;
+        } catch { /* ignore */ }
         if (bytes > 5120) {
           patterns.push(`CLAUDE.md is ${(bytes / 1024).toFixed(1)}KB — injected every session, burns tokens on paste`);
           recommendations.push("Trim CLAUDE.md to essentials (<5KB). Move reference docs to files read on-demand");
@@ -139,7 +145,7 @@ export function registerTokenAudit(server: McpServer): void {
             // Read with size cap: take the tail if too large
             const raw = stat.size <= MAX_TOOL_LOG_BYTES
               ? readFileSync(toolLogPath, "utf-8")
-              : run(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
+              : shell(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
 
             const lines = raw.trim().split("\n").filter(Boolean);
             totalToolCalls = lines.length;
