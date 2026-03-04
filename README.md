@@ -562,6 +562,79 @@ flowchart TB
 
 ---
 
+## Troubleshooting
+
+### LanceDB native module errors
+
+```
+Error: Failed to load native module
+```
+
+LanceDB uses native bindings that need to match your platform. Fix:
+
+```bash
+# Remove and reinstall node_modules
+rm -rf node_modules package-lock.json
+npm install
+```
+
+If you're on an uncommon platform (musl Linux, older macOS), check [LanceDB compatibility](https://lancedb.github.io/lancedb/). Node 18+ is required.
+
+### First run is slow / "Downloading model" hangs
+
+The local embedding provider downloads `Xenova/all-MiniLM-L6-v2` (~90MB) on first use. This is a one-time download — subsequent runs are instant. If it stalls:
+
+- Check your internet connection
+- The model caches to `~/.cache/huggingface/` — ensure you have write access
+- Switch to OpenAI embeddings if local doesn't work: set `OPENAI_API_KEY` and configure in `.preflight/config.yml`
+
+### "No session data found" / timeline search returns nothing
+
+Timeline tools need indexed session data. Common causes:
+
+1. **`CLAUDE_PROJECT_DIR` not set** — the server needs this to find your project's session JSONL files. Pass it as an env var when adding the MCP server:
+   ```bash
+   claude mcp add preflight -e CLAUDE_PROJECT_DIR=/path/to/project -- npx tsx /path/to/preflight/src/index.ts
+   ```
+2. **Project not onboarded** — run the `onboard_project` tool first to index existing sessions into LanceDB
+3. **No Claude Code sessions exist yet** — timeline search reads from `~/.claude/projects/` which is populated by Claude Code usage
+
+### `.preflight/` config not loading
+
+The `.preflight/` directory must be in your **project root** (the directory `CLAUDE_PROJECT_DIR` points to). Verify:
+
+```
+your-project/
+├── .preflight/
+│   ├── config.yml      # Triage thresholds, scoring weights
+│   └── triage.yml      # Custom skip/always-check keywords
+├── src/
+└── ...
+```
+
+If you renamed or moved your project, update `CLAUDE_PROJECT_DIR` to match.
+
+### Tools not appearing in Claude Code
+
+After adding the MCP server, restart Claude Code completely (not just reload). Verify the server is registered:
+
+```bash
+claude mcp list
+```
+
+You should see `preflight` in the output. If not, re-add it. Check that `npx tsx` works in your shell — you may need to install tsx globally (`npm i -g tsx`) if npx resolution fails.
+
+### Permission errors on `~/.preflight/`
+
+The server stores per-project data in `~/.preflight/projects/`. If you get `EACCES` errors:
+
+```bash
+mkdir -p ~/.preflight
+chmod 755 ~/.preflight
+```
+
+---
+
 ## Contributing
 
 This project is young and there's plenty to do. Check the [issues](https://github.com/TerminalGravity/preflight/issues) — several are tagged `good first issue`.
