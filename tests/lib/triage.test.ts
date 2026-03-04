@@ -127,4 +127,28 @@ describe("triagePrompt", () => {
     const result = triagePrompt("fix the bug");
     expect(result.level).toBe("ambiguous");
   });
+
+  // --- Multi-step + cross-service combined ---
+
+  it("multi-step prompt with cross-service terms includes cross_service_hits", () => {
+    const config: TriageConfig = {
+      crossServiceKeywords: ["auth", "webhook"],
+    };
+    const result = triagePrompt(
+      "refactor the auth module then update the webhook handler to match",
+      config,
+    );
+    expect(result.level).toBe("multi-step");
+    expect(result.cross_service_hits).toBeDefined();
+    expect(result.cross_service_hits!.length).toBeGreaterThan(0);
+    expect(result.recommended_tools).toContain("search-related-projects");
+  });
+
+  it("multi-step prompt without cross-service terms has no cross_service_hits", () => {
+    const result = triagePrompt(
+      "add a navbar component then wire it into the layout",
+    );
+    expect(result.level).toBe("multi-step");
+    expect(result.cross_service_hits).toBeUndefined();
+  });
 });
