@@ -1,0 +1,34 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+# These supplement auto-extracted contracts from your source code.
+# Useful for documenting APIs that aren't easily inferred from code.
+
+- name: User
+  kind: interface
+  description: Core user record
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: tier
+      type: "'free' | 'pro' | 'enterprise'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: CreateUserRequest
+  kind: interface
+  description: POST /api/users request body
+  fields:
+    - name: email
+      type: string
+      required: true
+    - name: name
+      type: string
+      required: true
+    - name: tier
+      type: "'free' | 'pro' | 'enterprise'"
+      required: false

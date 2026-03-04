@@ -408,6 +408,8 @@ This prevents the common failure mode: changing a shared type in one service and
 
 ### `.preflight/config.yml`
 
+> **💡 Tip:** Copy [`examples/.preflight/`](examples/.preflight/) into your project root for ready-to-use config files with comments explaining every option.
+
 Drop this in your project root. Every field is optional — defaults are sensible.
 
 ```yaml
