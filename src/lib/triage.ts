@@ -73,7 +73,8 @@ function isTrivialCommand(prompt: string): boolean {
 }
 
 function hasFileRefs(prompt: string): boolean {
-  return FILE_PATH_RE.test(prompt);
+  // Standard paths (src/auth.ts) or standalone dotfiles (.env, .gitignore)
+  return FILE_PATH_RE.test(prompt) || /(?:^|[\s,:(])\.[a-zA-Z][\w.-]*/.test(prompt);
 }
 
 function hasLineNumbers(prompt: string): boolean {

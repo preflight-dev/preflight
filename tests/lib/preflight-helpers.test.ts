@@ -26,13 +26,25 @@ describe("extractFilePaths", () => {
     expect(extractFilePaths("fix the auth bug")).toEqual([]);
   });
 
-  it("does not match bare dotfiles (regex limitation)", () => {
-    // The regex requires word chars before the dot
-    expect(extractFilePaths("update .env")).toEqual([]);
+  it("matches bare dotfiles like .env", () => {
+    expect(extractFilePaths("update .env")).toContain(".env");
+  });
+
+  it("matches dotfiles with extensions like .env.local", () => {
+    expect(extractFilePaths("check .env.local")).toContain(".env.local");
+  });
+
+  it("matches .gitignore", () => {
+    expect(extractFilePaths("update .gitignore")).toContain(".gitignore");
   });
 
   it("matches dotfiles with directory prefix", () => {
     expect(extractFilePaths("update config/.env")).toContain("config/.env");
+  });
+
+  it("does not match lone dots or numbers", () => {
+    const paths = extractFilePaths("version 2.0 is ready");
+    expect(paths).not.toContain(".0");
   });
 });
 

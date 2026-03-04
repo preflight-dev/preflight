@@ -9,8 +9,11 @@ import { resolve } from "path";
 
 /** Extract file paths from prompt text */
 export function extractFilePaths(prompt: string): string[] {
-  const matches = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
-  return [...new Set(matches)];
+  // Match standard paths (src/auth/jwt.ts) and dotfiles (.env, .gitignore)
+  const standard = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
+  const dotfiles = prompt.match(/(?:^|[\s,:(])(\.[a-zA-Z][\w.-]*)/g) || [];
+  const cleaned = dotfiles.map(m => m.replace(/^[\s,:(]+/, ""));
+  return [...new Set([...standard, ...cleaned])];
 }
 
 /** Verify files exist and return status lines. projectDir scopes the check. */

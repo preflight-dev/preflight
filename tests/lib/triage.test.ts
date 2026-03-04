@@ -127,4 +127,9 @@ describe("triagePrompt", () => {
     const result = triagePrompt("fix the bug");
     expect(result.level).toBe("ambiguous");
   });
+
+  it("recognizes dotfiles as file references (not ambiguous)", () => {
+    const result = triagePrompt("update the DATABASE_URL in .env to point to staging");
+    expect(result.level).not.toBe("ambiguous");
+  });
 });
