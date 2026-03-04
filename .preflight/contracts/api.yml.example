@@ -1,0 +1,35 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+# These supplement auto-extracted contracts from your source code.
+# Useful for documenting APIs that aren't easily auto-detected.
+# Copy this file to .preflight/contracts/api.yml and customize.
+
+- name: User
+  kind: interface
+  description: Core user object returned by auth endpoints
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: ApiResponse
+  kind: interface
+  description: Standard API response wrapper
+  fields:
+    - name: success
+      type: boolean
+      required: true
+    - name: data
+      type: T
+      required: false
+    - name: error
+      type: string
+      required: false
