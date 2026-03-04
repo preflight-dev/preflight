@@ -406,6 +406,16 @@ This prevents the common failure mode: changing a shared type in one service and
 
 ## Configuration Reference
 
+### Quick Setup
+
+Copy the example config directory into your project:
+
+```bash
+cp -r examples/.preflight /path/to/your/project/
+```
+
+Then edit the files to match your project. See [`examples/.preflight/`](examples/.preflight/) for annotated examples of all three config files.
+
 ### `.preflight/config.yml`
 
 Drop this in your project root. Every field is optional — defaults are sensible.

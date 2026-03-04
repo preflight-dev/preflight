@@ -1,0 +1,52 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+#
+# Use this to define API contracts that auto-extraction might miss,
+# or to document contracts from external services your project consumes.
+#
+# Manual definitions take precedence over auto-extracted ones when
+# names conflict.
+
+- name: User
+  kind: interface
+  description: Core user object returned by the API
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: CreateUserRequest
+  kind: interface
+  description: Payload for POST /api/users
+  fields:
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: false
+      description: Defaults to 'member'
+
+# Example: document an external webhook your app receives
+- name: StripeWebhookEvent
+  kind: interface
+  description: Incoming Stripe webhook payload (subset we care about)
+  fields:
+    - name: type
+      type: string
+      required: true
+      description: "e.g. 'checkout.session.completed'"
+    - name: data.object.id
+      type: string
+      required: true
+    - name: data.object.customer
+      type: string
+      required: true

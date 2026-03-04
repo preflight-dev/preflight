@@ -1,0 +1,45 @@
+# .preflight/triage.yml — Controls the triage classification engine
+#
+# This is where you teach preflight about YOUR project's domain.
+# Add keywords that matter to your codebase so triage routes correctly.
+
+rules:
+  # Prompts containing these are ALWAYS flagged as ambiguous (at minimum).
+  # Add domain terms that are too important to let vague prompts slip through.
+  always_check:
+    - rewards
+    - permissions
+    - migration
+    - schema
+    - billing
+    # - payments
+    # - onboarding
+
+  # Prompts containing these pass through as TRIVIAL (no checks).
+  # These are safe, mechanical commands that don't need disambiguation.
+  skip:
+    - commit
+    - format
+    - lint
+    - "save this"
+    - "push it"
+
+  # Prompts containing these escalate to CROSS-SERVICE triage.
+  # Add keywords for services your project talks to.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    # - analytics
+    # - stripe
+    # - sendgrid
+
+# How aggressively to classify prompts.
+#   "relaxed"  — more prompts pass as clear (fewer interruptions)
+#   "standard" — balanced (default)
+#   "strict"   — more prompts flagged as ambiguous (catches more mistakes)
+#
+# Start with "standard". Move to "strict" if you find yourself correcting
+# Claude often. Move to "relaxed" once your prompt habits improve.
+strictness: standard

@@ -1,0 +1,41 @@
+# .preflight/config.yml — Drop this in your project root
+#
+# Copy this entire .preflight/ directory into your project:
+#   cp -r examples/.preflight /path/to/your/project/
+#
+# Every field is optional. Defaults are sensible — only override what you need.
+
+# Profile controls how much detail preflight adds to responses.
+#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
+#   "standard" — balanced (default)
+#   "full"     — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service awareness.
+# When your prompt mentions something from a related service,
+# preflight searches that project's indexed history and contracts.
+related_projects:
+  - path: /absolute/path/to/api-service
+    alias: api
+  - path: /absolute/path/to/auth-service
+    alias: auth
+  # - path: /absolute/path/to/shared-types
+  #   alias: shared-types
+
+# Behavioral thresholds — tune these to your workflow
+thresholds:
+  # Warn if no activity for this many minutes
+  session_stale_minutes: 30
+
+  # Suggest a checkpoint after this many tool calls
+  max_tool_calls_before_checkpoint: 100
+
+  # Minimum corrections before forming a learnable pattern
+  correction_pattern_threshold: 3
+
+# Embedding configuration
+embeddings:
+  # "local" uses Xenova/all-MiniLM-L6-v2 (~90MB download, runs offline)
+  # "openai" uses text-embedding-ada-002 (faster, requires API key)
+  provider: local
+  # openai_api_key: sk-...  # Only needed if provider is "openai"
