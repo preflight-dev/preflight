@@ -74,9 +74,9 @@ export function extractGitHistory(
   return parseGitOutput(output, projectDir, projectName);
 }
 
-// ── Internal ───────────────────────────────────────────────────────────────
+// ── Parsing (exported for testing) ──────────────────────────────────────────
 
-function parseGitOutput(raw: string, project: string, projectName: string): TimelineEvent[] {
+export function parseGitOutput(raw: string, project: string, projectName: string): TimelineEvent[] {
   const events: TimelineEvent[] = [];
 
   // Split on COMMIT_START markers
