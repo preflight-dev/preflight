@@ -2,6 +2,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run, getBranch, getRecentCommits, getStatus } from "../lib/git.js";
+import { shell, shellEscape } from "../lib/shell.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
@@ -16,11 +17,6 @@ const STOP_WORDS = new Set([
   "where", "which", "there", "their", "about", "after", "before", "does", "make",
   "like", "some", "each", "only", "need", "want", "please", "update", "change",
 ]);
-
-/** Shell-escape a string for use inside single quotes */
-function shellEscape(s: string): string {
-  return s.replace(/'/g, "'\\''");
-}
 
 /** Safely parse git porcelain status lines */
 function parsePortelainFiles(porcelain: string): string[] {
@@ -128,7 +124,7 @@ export function registerScopeWork(server: McpServer): void {
         .slice(0, 5);
       if (grepTerms.length > 0) {
         const pattern = shellEscape(grepTerms.join("|"));
-        matchedFiles = run(`git ls-files | head -500 | grep -iE '${pattern}' | head -30`);
+        matchedFiles = shell(`git ls-files | head -500 | grep -iE '${pattern}' | head -30`);
       }
 
       // Check which relevant dirs actually exist (with path traversal protection)

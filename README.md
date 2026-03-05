@@ -12,7 +12,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
+[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard) · [Troubleshooting](TROUBLESHOOTING.md)
 
 </div>
 
@@ -335,6 +335,150 @@ After onboarding, you get:
 
 ---
 
+## Usage Examples
+
+Real input → output examples showing what the tools actually produce.
+
+### `preflight_check` — Catching a vague prompt
+
+**Input:**
+```
+preflight_check({ prompt: "fix the auth bug" })
+```
+
+**Output:**
+```markdown
+# 🛫 Preflight Check
+_2025-03-05T10:15 | Triage: **ambiguous** (confidence: 0.85)_
+_Reasons: vague verb without file target; short prompt_
+
+## Clarification
+
+### Git State
+Branch: `feat/auth-refactor` | Dirty files: 3
+
+Recent commits:
+  a1b2c3d fix: JWT refresh token expiry check
+  d4e5f6g feat: add OAuth2 callback handler
+  h7i8j9k fix: session cookie SameSite attribute
+
+### ⚠️ Clarification Needed
+- Contains vague pronouns — clarify what 'it' refers to
+- Vague verb without specific file targets
+- Very short prompt — likely missing context
+```
+
+The tool identified 3 recent auth-related commits and asked you to specify which bug — saving a wrong-direction cycle.
+
+### `preflight_check` — Multi-step task
+
+**Input:**
+```
+preflight_check({
+  prompt: "add rate limiting to /api/users, then update the OpenAPI spec, then add integration tests"
+})
+```
+
+**Output:**
+```markdown
+# 🛫 Preflight Check
+_Triage: **multi-step** (confidence: 0.92)_
+
+## Scope: MEDIUM
+
+## Sequence
+### Execution Plan
+1. Add rate limiting to /api/users — Risk: 🟡 MEDIUM
+2. Update the OpenAPI spec — Risk: 🟢 LOW
+3. Add integration tests — Risk: 🟢 LOW
+
+### Checkpoints
+- [ ] Verify after each step before proceeding
+- [ ] Run tests between steps that touch different layers
+- [ ] Commit after each successful step
+```
+
+### `prompt_score` — Grading a prompt
+
+**Input:**
+```
+prompt_score({ prompt: "refactor the database layer to use connection pooling in src/db/pool.ts, max 10 connections, with health checks every 30s" })
+```
+
+**Output:**
+```
+Grade: A (92/100)
+  Specificity:    A  — names exact file and parameters
+  Scope:          A  — single focused change
+  Actionability:  A  — clear implementation details
+  Done-condition: B+ — could add "verify with load test"
+```
+
+### `estimate_cost` — Understanding token waste
+
+**Input:**
+```
+estimate_cost({ session_path: "~/.claude/projects/.../session.jsonl" })
+```
+
+**Output (abbreviated):**
+```
+Session Cost Estimate
+─────────────────────
+Total tokens:     45,200
+Estimated cost:   $0.68
+Corrections:      3 (waste: ~8,400 tokens / $0.13)
+Preflight saves:  ~$0.25 if checks had caught the vague prompts
+
+Waste breakdown:
+  "fix it" → wrong file edited → corrected     2,800 tokens
+  "update the tests" → wrong test suite         3,100 tokens
+  "do the same for the other one"               2,500 tokens
+```
+
+### `search_history` — Finding past decisions
+
+**Input:**
+```
+search_history({ query: "why did we switch from Redis to Postgres for sessions?" })
+```
+
+**Output:**
+```
+Found 3 relevant events across 2 sessions:
+
+1. [2025-02-14 session-abc] "switching session store from Redis to Postgres
+   because we're already paying for Supabase and don't want another
+   managed service just for sessions"
+
+2. [2025-02-14 session-abc] Commit: "feat: migrate session store to Postgres
+   with pgcrypto for token generation"
+
+3. [2025-02-15 session-def] "confirmed Postgres sessions working in prod,
+   p95 latency 12ms vs 8ms with Redis — acceptable tradeoff"
+```
+
+### `verify_completion` — Pre-merge sanity check
+
+**Input:**
+```
+verify_completion({ task: "add rate limiting middleware" })
+```
+
+**Output:**
+```
+## Verification Results
+
+✅ TypeScript:  No type errors
+✅ Tests:       47 passed, 0 failed (2 new)
+✅ Build:       Clean build in 3.2s
+⚠️ Lint:        1 warning — unused import in src/middleware/rate-limit.ts:3
+
+Recommendation: Fix the lint warning, then clear to merge.
+```
+
+---
+
 ## The 12-Category Scorecard
 
 `generate_scorecard` evaluates your prompt discipline across 12 categories. Each one measures something specific about how you interact with Claude Code:
@@ -405,6 +549,12 @@ This prevents the common failure mode: changing a shared type in one service and
 ---
 
 ## Configuration Reference
+
+> **Quick start:** Copy the example config into your project:
+> ```bash
+> cp -r examples/.preflight /path/to/your/project/
+> ```
+> See [`examples/.preflight/`](examples/.preflight/) for fully annotated config files you can customize.
 
 ### `.preflight/config.yml`
 
