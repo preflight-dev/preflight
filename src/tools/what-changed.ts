@@ -12,8 +12,10 @@ export function registerWhatChanged(server: McpServer): void {
     async ({ since }) => {
       const ref = since || "HEAD~5";
       const diffStat = getDiffStat(ref);
-      const diffFiles = run(`git diff ${ref} --name-only 2>/dev/null || git diff HEAD~3 --name-only`);
-      const log = run(`git log ${ref}..HEAD --oneline 2>/dev/null || git log -5 --oneline`);
+      const diffFilesResult = run(["diff", "--name-only", ref]);
+      const diffFiles = diffFilesResult.startsWith("[") ? run(["diff", "--name-only", "HEAD~3"]) : diffFilesResult;
+      const logResult = run(["log", `${ref}..HEAD`, "--oneline"]);
+      const log = logResult.startsWith("[") ? run(["log", "-5", "--oneline"]) : logResult;
       const branch = getBranch();
 
       const fileList = diffFiles.split("\n").filter(Boolean);
