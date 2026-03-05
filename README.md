@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard) · [Troubleshooting](TROUBLESHOOTING.md)
 
@@ -121,6 +121,20 @@ Restart Claude Code. The tools activate automatically.
 npm install -g preflight-dev
 claude mcp add preflight -- preflight-dev
 ```
+
+### Set up project config (optional)
+
+Run the interactive init command to create a `.preflight/` config directory with template files:
+
+```bash
+npx preflight-dev init
+```
+
+This creates:
+- `.preflight/config.yml` — project settings, thresholds, and tool toggles
+- `.preflight/triage.yml` — custom triage rules for prompt classification
+
+You can also copy the examples from [`examples/.preflight/`](examples/.preflight/) manually.
 
 ---
 
