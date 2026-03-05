@@ -80,7 +80,7 @@ export function registerTokenAudit(server: McpServer): void {
       // 3. CLAUDE.md bloat check
       const claudeMd = readIfExists("CLAUDE.md", 1);
       if (claudeMd !== null) {
-        const stat = run(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
+        const stat = shell(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
         const bytes = parseInt(stat) || 0;
         if (bytes > 5120) {
           patterns.push(`CLAUDE.md is ${(bytes / 1024).toFixed(1)}KB — injected every session, burns tokens on paste`);
@@ -139,7 +139,7 @@ export function registerTokenAudit(server: McpServer): void {
             // Read with size cap: take the tail if too large
             const raw = stat.size <= MAX_TOOL_LOG_BYTES
               ? readFileSync(toolLogPath, "utf-8")
-              : run(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
+              : shell(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
 
             const lines = raw.trim().split("\n").filter(Boolean);
             totalToolCalls = lines.length;
