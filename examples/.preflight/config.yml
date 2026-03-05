@@ -1,0 +1,41 @@
+# .preflight/config.yml
+# ──────────────────────────────────────────────────────────────────────
+# Drop this directory into your project root. Preflight detects it
+# automatically when CLAUDE_PROJECT_DIR points to your project.
+#
+# All fields are optional — anything you omit uses the defaults shown.
+# ──────────────────────────────────────────────────────────────────────
+
+# Profile controls how many tools activate per check.
+#   minimal  — triage + clarify only (fastest, lowest token cost)
+#   standard — adds contract search, git state, workspace priorities
+#   full     — everything including timeline vector search & trend reports
+profile: standard
+
+# Related projects for cross-service contract awareness.
+# Preflight scans these for exported types, routes, and schemas so it
+# can warn you when a change in one project affects another.
+related_projects:
+  - path: ../backend-api
+    alias: api
+  - path: ../shared-types
+    alias: types
+
+# Tuning knobs — adjust these based on your workflow.
+thresholds:
+  # Minutes before a session is considered stale (affects context freshness)
+  session_stale_minutes: 30
+
+  # Tool calls before preflight suggests a checkpoint/commit
+  max_tool_calls_before_checkpoint: 100
+
+  # How many keyword matches from correction history trigger a warning
+  # Lower = more sensitive (catches more repeats, but noisier)
+  correction_pattern_threshold: 3
+
+# Embedding provider for timeline vector search.
+#   local  — built-in TF-IDF (no API key needed, works offline)
+#   openai — OpenAI text-embedding-3-small (better quality, needs key)
+embeddings:
+  provider: local
+  # openai_api_key: sk-...  # or set OPENAI_API_KEY env var

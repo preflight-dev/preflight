@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getBranch, getDiffStat } from "../lib/git.js";
+import { run, getBranch, getDiffStat, getDiffFiles } from "../lib/git.js";
 
 export function registerWhatChanged(server: McpServer): void {
   server.tool(
@@ -12,8 +12,10 @@ export function registerWhatChanged(server: McpServer): void {
     async ({ since }) => {
       const ref = since || "HEAD~5";
       const diffStat = getDiffStat(ref);
-      const diffFiles = run(`git diff ${ref} --name-only 2>/dev/null || git diff HEAD~3 --name-only`);
-      const log = run(`git log ${ref}..HEAD --oneline 2>/dev/null || git log -5 --oneline`);
+      const diffFilesResult = run(["diff", ref, "--name-only"]);
+      const diffFiles = diffFilesResult.startsWith("[") ? run(["diff", "HEAD~3", "--name-only"]) : diffFilesResult;
+      const logResult = run(["log", `${ref}..HEAD`, "--oneline"]);
+      const log = logResult.startsWith("[") ? run(["log", "-5", "--oneline"]) : logResult;
       const branch = getBranch();
 
       const fileList = diffFiles.split("\n").filter(Boolean);

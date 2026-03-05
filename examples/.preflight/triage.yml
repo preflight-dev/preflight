@@ -1,0 +1,49 @@
+# .preflight/triage.yml
+# ──────────────────────────────────────────────────────────────────────
+# Customize the triage decision tree — which prompts get checked,
+# which pass through, and how strict the classifier is.
+# ──────────────────────────────────────────────────────────────────────
+
+# Strictness controls the triage sensitivity.
+#   relaxed  — only flags very short/vague prompts
+#   standard — balanced (recommended for most teams)
+#   strict   — flags anything without explicit file references
+strictness: standard
+
+rules:
+  # Prompts containing these keywords ALWAYS trigger a full check,
+  # even if they'd otherwise be classified as clear/trivial.
+  # Great for high-risk areas of your codebase.
+  always_check:
+    - migration
+    - schema
+    - permissions
+    - billing
+    - deploy
+    # Add your own:
+    # - payments
+    # - auth
+    # - delete
+
+  # Prompts matching these pass through with zero overhead.
+  # Use for commands you run constantly and never need checked.
+  skip:
+    - commit
+    - format
+    - lint
+    - "git status"
+    - "run tests"
+
+  # Keywords that trigger cross-service contract scanning.
+  # When a prompt mentions these, preflight also checks related_projects
+  # for type/route/schema contracts that might be affected.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    - api
+    # Add your own:
+    # - queue
+    # - cache
+    # - pubsub
