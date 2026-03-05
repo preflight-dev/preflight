@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -33,6 +33,52 @@ export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {
 /** Convenience: run a raw command string (split on spaces). Only for simple, known-safe commands. */
 function gitCmd(cmdStr: string, opts?: { timeout?: number }): string {
   return run(cmdStr.split(/\s+/), opts);
+}
+
+/**
+ * Run an arbitrary shell command (with shell: true).
+ * Use this for non-git commands or commands requiring pipes/redirects.
+ * Callers are responsible for sanitizing any interpolated values.
+ */
+export function shell(cmd: string, opts: { timeout?: number; cwd?: string } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: opts.cwd || PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    if (e.killed === true || e.signal === "SIGTERM") {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
+}
+
+/**
+ * Get git-tracked files, optionally filtered. Uses execFileSync (no shell).
+ * Replaces patterns like: run("git ls-files | grep ... | head ...")
+ */
+export function getTrackedFiles(opts: { pattern?: RegExp; limit?: number } = {}): string[] {
+  const raw = run(["ls-files"]);
+  if (raw.startsWith("[")) return [];
+  let files = raw.split("\n").filter(Boolean);
+  if (opts.pattern) files = files.filter(f => opts.pattern!.test(f));
+  if (opts.limit) files = files.slice(0, opts.limit);
+  return files;
+}
+
+/**
+ * Get git-tracked files matching a path prefix.
+ */
+export function getTrackedFilesInPath(prefix: string, limit = 20): string[] {
+  const result = run(["ls-files", "--", `${prefix}*`]);
+  if (result.startsWith("[")) return [];
+  return result.split("\n").filter(Boolean).slice(0, limit);
 }
 
 /** Get the current branch name. */
