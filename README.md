@@ -406,6 +406,8 @@ This prevents the common failure mode: changing a shared type in one service and
 
 ## Configuration Reference
 
+> **💡 Starter configs included!** Copy the `.preflight/` directory from this repo into your project root for ready-to-customize example configs with inline comments. See [`.preflight/README.md`](.preflight/README.md).
+
 ### `.preflight/config.yml`
 
 Drop this in your project root. Every field is optional — defaults are sensible.

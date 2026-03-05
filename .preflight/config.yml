@@ -1,0 +1,30 @@
+# .preflight/config.yml — Example configuration
+# Copy this directory to your project root and customize.
+# Every field is optional — defaults are sensible.
+
+# Profile controls overall verbosity:
+#   "minimal"  — only flag ambiguous+, skip clarification detail
+#   "standard" — default behavior
+#   "full"     — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service contract awareness.
+# When a prompt mentions keywords from a related project,
+# preflight escalates to cross-service triage and pulls
+# relevant types, interfaces, and routes automatically.
+related_projects:
+  # - path: /absolute/path/to/auth-service
+  #   alias: auth-service
+  # - path: /absolute/path/to/shared-types
+  #   alias: shared-types
+
+# Behavioral thresholds
+thresholds:
+  session_stale_minutes: 30                # Warn if no activity for this long
+  max_tool_calls_before_checkpoint: 100    # Suggest checkpoint after N tool calls
+  correction_pattern_threshold: 3          # Min corrections before forming a pattern
+
+# Embedding configuration
+embeddings:
+  provider: local                          # "local" (Xenova, zero config) or "openai"
+  # openai_api_key: sk-...                 # Only needed if provider is "openai"

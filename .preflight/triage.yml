@@ -1,0 +1,36 @@
+# .preflight/triage.yml — Example triage rules
+# Controls how the triage classifier routes prompts.
+
+rules:
+  # Prompts containing these words → always at least AMBIGUOUS.
+  # Add domain-specific terms that are often under-specified.
+  always_check:
+    - rewards
+    - permissions
+    - migration
+    - schema
+    # - billing          # uncomment for billing-heavy projects
+    # - deploy           # uncomment if deploys need extra scrutiny
+
+  # Prompts containing these words → TRIVIAL (pass through).
+  # Safe, well-understood operations that don't need triage.
+  skip:
+    - commit
+    - format
+    - lint
+    - prettier
+
+  # Prompts containing these words → CROSS-SERVICE.
+  # Triggers contract search across related_projects.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    # - payments         # uncomment if you have a payments service
+
+# How aggressively to classify:
+#   "relaxed"  — more prompts pass as clear
+#   "standard" — balanced (recommended starting point)
+#   "strict"   — more prompts flagged as ambiguous
+strictness: standard

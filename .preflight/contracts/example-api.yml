@@ -1,0 +1,39 @@
+# .preflight/contracts/example-api.yml — Example manual contract
+# Define contracts that supplement auto-extraction from code.
+# Manual definitions win on name conflicts with auto-extracted ones.
+#
+# Use this for:
+#   - External API contracts not in your codebase
+#   - Shared types that live in a separate repo
+#   - Business-domain types that aren't in code yet
+
+- name: User
+  kind: interface
+  description: Core user record
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'guest'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: ApiResponse
+  kind: interface
+  description: Standard API response envelope
+  fields:
+    - name: success
+      type: boolean
+      required: true
+    - name: data
+      type: T
+      required: false
+    - name: error
+      type: string
+      required: false
