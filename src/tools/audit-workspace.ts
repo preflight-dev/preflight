@@ -36,7 +36,7 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      const recentFiles = run(["diff", "--name-only", "HEAD~10"]).split("\n").filter(Boolean);
       const sections: string[] = [];
 
       // Doc freshness
