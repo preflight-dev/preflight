@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
-import { run, getBranch, getStatus, getLastCommit, getStagedFiles } from "../lib/git.js";
+import { run, shell, getBranch, getStatus, getLastCommit, getStagedFiles } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { appendLog, now } from "../lib/state.js";
 
@@ -84,11 +84,12 @@ ${dirty || "clean"}
 
         if (commitResult === "no uncommitted changes") {
           // Stage the checkpoint file too
-          run(`git add "${checkpointFile}"`);
-          const result = run(`${addCmd} && git commit -m "${commitMsg.replace(/"/g, '\\"')}" 2>&1`);
+          run(["add", checkpointFile]);
+          shell(addCmd);
+          const result = run(["commit", "-m", commitMsg]);
           if (result.includes("commit failed") || result.includes("nothing to commit")) {
             // Rollback: unstage if commit failed
-            run("git reset HEAD 2>/dev/null");
+            run(["reset", "HEAD"]);
             commitResult = `commit failed: ${result}`;
           } else {
             commitResult = result;
