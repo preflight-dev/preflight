@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getDiffFiles } from "../lib/git.js";
+import { run, runShell, getDiffFiles } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { getConfig, type RelatedProject } from "../lib/config.js";
 import { existsSync, readFileSync } from "fs";
@@ -29,12 +29,20 @@ function findAreaFiles(area: string): string {
 
   // If area looks like a path, search directly
   if (area.includes("/")) {
-    return run(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
+    const result = run(["ls-files", "--", `${safeArea}*`]);
+    if (result && !result.startsWith("[")) {
+      return result.split("\n").slice(0, 20).join("\n");
+    }
+    return getDiffFiles("HEAD~3");
   }
 
   // Search for area keyword in git-tracked file paths
-  const files = run(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
-  if (files && !files.startsWith("[command failed")) return files;
+  const allFiles = run(["ls-files"]);
+  if (allFiles && !allFiles.startsWith("[")) {
+    const pattern = new RegExp(safeArea, "i");
+    const matched = allFiles.split("\n").filter(f => pattern.test(f)).slice(0, 20);
+    if (matched.length > 0) return matched.join("\n");
+  }
 
   // Fallback to recently changed files
   return getDiffFiles("HEAD~3");
@@ -42,18 +50,29 @@ function findAreaFiles(area: string): string {
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const allFiles = run(["ls-files"]);
+  if (!allFiles || allFiles.startsWith("[")) return "";
+  const testPattern = /\.(spec|test)\.(ts|tsx|js|jsx)$/;
+  const testFiles = allFiles.split("\n").filter(f => testPattern.test(f));
+
+  if (!area) return testFiles.slice(0, 10).join("\n");
 
   const safeArea = shellEscape(area.split(/\s+/)[0]);
-  const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const areaPattern = new RegExp(safeArea, "i");
+  const matched = testFiles.filter(f => areaPattern.test(f)).slice(0, 10);
+  return matched.length > 0 ? matched.join("\n") : testFiles.slice(0, 10).join("\n");
 }
 
 /** Get an example pattern from the first matching file */
 function getExamplePattern(files: string): string {
   const firstFile = files.split("\n").filter(Boolean)[0];
   if (!firstFile) return "no pattern available";
-  return run(`head -30 '${shellEscape(firstFile)}' 2>/dev/null || echo 'could not read file'`);
+  try {
+    const content = readFileSync(join(PROJECT_DIR, firstFile), "utf-8");
+    return content.split("\n").slice(0, 30).join("\n");
+  } catch {
+    return "could not read file";
+  }
 }
 
 // ---------------------------------------------------------------------------
