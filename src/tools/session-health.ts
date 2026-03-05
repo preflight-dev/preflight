@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { getBranch, getStatus, getLastCommit, getLastCommitTime, run } from "../lib/git.js";
+import { getBranch, getStatus, getLastCommit, getLastCommitTime, run, shell } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
 import { loadState, saveState } from "../lib/state.js";
 import { getConfig } from "../lib/config.js";
@@ -27,7 +27,7 @@ export function registerSessionHealth(server: McpServer): void {
       const dirtyCount = dirty ? dirty.split("\n").filter(Boolean).length : 0;
       const lastCommit = getLastCommit();
       const lastCommitTimeStr = getLastCommitTime();
-      const uncommittedDiff = run("git diff --stat | tail -1");
+      const uncommittedDiff = shell("git diff --stat | tail -1");
 
       // Parse commit time safely
       const commitDate = parseGitDate(lastCommitTimeStr);

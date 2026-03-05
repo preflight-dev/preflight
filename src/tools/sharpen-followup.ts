@@ -1,7 +1,7 @@
 // CATEGORY 4: sharpen_followup — Follow-up Specificity
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, shell } from "../lib/git.js";
 import { now } from "../lib/state.js";
 
 /** Parse git porcelain output into deduplicated file paths, handling renames (R/C) */
@@ -87,7 +87,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       // Gather context to resolve ambiguity
       const contextFiles: string[] = [...(previous_files ?? [])];
       const recentChanged = getRecentChangedFiles();
-      const porcelainOutput = run("git status --porcelain 2>/dev/null");
+      const porcelainOutput = run(["status", "--porcelain"]);
       const untrackedOrModified = parsePortelainFiles(porcelainOutput);
 
       const allKnownFiles = [...new Set([...contextFiles, ...recentChanged, ...untrackedOrModified])].filter(Boolean);
