@@ -11,7 +11,7 @@ import { load as yamlLoad } from "js-yaml";
 import { PROJECT_DIR } from "./files.js";
 
 export type Profile = "minimal" | "standard" | "full";
-export type EmbeddingProvider = "local" | "openai";
+export type EmbeddingProvider = "local" | "openai" | "ollama";
 export type TriageStrictness = "relaxed" | "standard" | "strict";
 
 export interface RelatedProject {
@@ -30,6 +30,9 @@ export interface PreflightConfig {
   embeddings: {
     provider: EmbeddingProvider;
     openai_api_key?: string;
+    ollama_base_url?: string;
+    ollama_model?: string;
+    ollama_dimensions?: number;
   };
   triage: {
     rules: {
@@ -125,13 +128,21 @@ function loadConfig(): PreflightConfig {
 
     // Embedding provider
     const envProvider = process.env.EMBEDDING_PROVIDER?.toLowerCase();
-    if (envProvider === "local" || envProvider === "openai") {
+    if (envProvider === "local" || envProvider === "openai" || envProvider === "ollama") {
       config.embeddings.provider = envProvider;
     }
 
     // OpenAI API key
     if (process.env.OPENAI_API_KEY) {
       config.embeddings.openai_api_key = process.env.OPENAI_API_KEY;
+    }
+
+    // Ollama settings
+    if (process.env.OLLAMA_BASE_URL) {
+      config.embeddings.ollama_base_url = process.env.OLLAMA_BASE_URL;
+    }
+    if (process.env.OLLAMA_EMBED_MODEL) {
+      config.embeddings.ollama_model = process.env.OLLAMA_EMBED_MODEL;
     }
   }
 

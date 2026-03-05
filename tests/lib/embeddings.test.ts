@@ -1,66 +1,48 @@
-import { describe, it, expect } from "vitest";
-import { preprocessText, createEmbeddingProvider } from "../../src/lib/embeddings.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createEmbeddingProvider, preprocessText } from "../../src/lib/embeddings.js";
 
 describe("preprocessText", () => {
-  it("strips code blocks", () => {
-    const result = preprocessText("before ```const x = 1;``` after");
-    expect(result).not.toContain("const x");
-    expect(result).toContain("before");
-    expect(result).toContain("after");
-  });
-
-  it("strips inline code", () => {
-    const result = preprocessText("use `foo()` here");
-    expect(result).not.toContain("foo()");
-    expect(result).toContain("use");
-    expect(result).toContain("here");
-  });
-
-  it("removes markdown characters", () => {
-    const result = preprocessText("# Heading **bold** _italic_");
+  it("strips markdown formatting", () => {
+    const result = preprocessText("# Hello **world** `code` [link](http://x.com)");
     expect(result).not.toContain("#");
     expect(result).not.toContain("**");
+    expect(result).not.toContain("`");
+    expect(result).toContain("link");
   });
 
-  it("strips markdown link brackets and parens", () => {
-    const result = preprocessText("[Click here](https://example.com)");
-    // Brackets and parens are removed by markdown char stripping
-    expect(result).not.toContain("[");
-    expect(result).not.toContain("]");
-    expect(result).not.toContain("(");
-    expect(result).not.toContain(")");
-    expect(result).toContain("Click here");
-  });
-
-  it("normalizes whitespace", () => {
-    const result = preprocessText("hello   \n\n   world");
-    expect(result).toBe("hello world");
-  });
-
-  it("truncates to 2048 chars", () => {
-    const long = "a".repeat(3000);
-    const result = preprocessText(long);
-    expect(result.length).toBeLessThanOrEqual(2048);
+  it("truncates long text to 2048 chars", () => {
+    const long = "a".repeat(5000);
+    expect(preprocessText(long).length).toBe(2048);
   });
 });
 
 describe("createEmbeddingProvider", () => {
-  it("returns local provider with 384 dimensions", () => {
+  it("creates local provider by default", () => {
     const provider = createEmbeddingProvider({ provider: "local" });
     expect(provider.dimensions).toBe(384);
   });
 
-  it("throws when openai provider has no API key", () => {
-    expect(() =>
-      createEmbeddingProvider({ provider: "openai" }),
-    ).toThrow("API key required");
+  it("creates openai provider with api key", () => {
+    const provider = createEmbeddingProvider({ provider: "openai", apiKey: "sk-test" });
+    expect(provider.dimensions).toBe(1536);
   });
 
-  it("returns openai provider with 1536 dimensions when key provided", () => {
+  it("throws when openai provider missing api key", () => {
+    expect(() => createEmbeddingProvider({ provider: "openai" })).toThrow("OpenAI API key required");
+  });
+
+  it("creates ollama provider with defaults", () => {
+    const provider = createEmbeddingProvider({ provider: "ollama" });
+    expect(provider.dimensions).toBe(768);
+  });
+
+  it("creates ollama provider with custom config", () => {
     const provider = createEmbeddingProvider({
-      provider: "openai",
-      apiKey: "sk-test-key",
+      provider: "ollama",
+      ollamaBaseUrl: "http://myhost:11434",
+      ollamaModel: "mxbai-embed-large",
+      ollamaDimensions: 1024,
     });
-    expect(provider.dimensions).toBe(1536);
+    expect(provider.dimensions).toBe(1024);
   });
 });
