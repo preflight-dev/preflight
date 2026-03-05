@@ -1,7 +1,7 @@
 // CATEGORY 5: token_audit — Token Efficiency
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, shell } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { loadState, saveState, now, STATE_DIR } from "../lib/state.js";
 import { readFileSync, existsSync, statSync } from "fs";
@@ -39,8 +39,8 @@ export function registerTokenAudit(server: McpServer): void {
       let wasteScore = 0;
 
       // 1. Git diff size & dirty file count
-      const diffStat = run("git diff --stat --no-color 2>/dev/null");
-      const dirtyFiles = run("git diff --name-only 2>/dev/null");
+      const diffStat = run(["diff", "--stat", "--no-color"]);
+      const dirtyFiles = run(["diff", "--name-only"]);
       const dirtyList = dirtyFiles.split("\n").filter(Boolean);
       const dirtyCount = dirtyList.length;
 
@@ -63,7 +63,7 @@ export function registerTokenAudit(server: McpServer): void {
 
       for (const f of dirtyList.slice(0, 30)) {
         // Use shell-safe quoting instead of interpolation
-        const wc = run(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
+        const wc = shell(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
         const lines = parseInt(wc) || 0;
         estimatedContextTokens += lines * AVG_LINE_BYTES * AVG_TOKENS_PER_BYTE;
         if (lines > 500) {
