@@ -55,9 +55,11 @@ export interface ProjectInfo {
 }
 
 export interface TimelineConfig {
-  embedding_provider: "local" | "openai";
+  embedding_provider: "local" | "openai" | "ollama";
   embedding_model: string;
   openai_api_key?: string;
+  ollama_base_url?: string;
+  ollama_model?: string;
   indexed_projects: Record<string, {
     last_session_index: string;
     last_git_index: string;
@@ -186,6 +188,8 @@ async function getEmbedder(): Promise<EmbeddingProvider> {
     _embedder = createEmbeddingProvider({
       provider: config.embedding_provider,
       apiKey: config.openai_api_key,
+      ollamaBaseUrl: config.ollama_base_url,
+      ollamaModel: config.ollama_model,
     });
   }
   return _embedder;

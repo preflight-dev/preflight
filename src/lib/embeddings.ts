@@ -102,17 +102,80 @@ class OpenAIEmbeddingProvider implements EmbeddingProvider {
   }
 }
 
+// --- Ollama Provider ---
+
+class OllamaEmbeddingProvider implements EmbeddingProvider {
+  dimensions = 384; // default for all-minilm, updated on first call
+  private baseUrl: string;
+  private model: string;
+  private dimensionsResolved = false;
+
+  constructor(baseUrl = "http://localhost:11434", model = "all-minilm") {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    this.model = model;
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const processed = preprocessText(text);
+    const resp = await fetch(`${this.baseUrl}/api/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: this.model, input: processed }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Ollama embeddings error ${resp.status}: ${err}`);
+    }
+
+    const data = await resp.json();
+    const embedding: number[] = data.embeddings[0];
+    if (!this.dimensionsResolved) {
+      this.dimensions = embedding.length;
+      this.dimensionsResolved = true;
+    }
+    return embedding;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    const processed = texts.map(preprocessText);
+    const resp = await fetch(`${this.baseUrl}/api/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: this.model, input: processed }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Ollama embeddings error ${resp.status}: ${err}`);
+    }
+
+    const data = await resp.json();
+    const embeddings: number[][] = data.embeddings;
+    if (!this.dimensionsResolved && embeddings.length > 0) {
+      this.dimensions = embeddings[0].length;
+      this.dimensionsResolved = true;
+    }
+    return embeddings;
+  }
+}
+
 // --- Factory ---
 
 export interface EmbeddingConfig {
-  provider: "local" | "openai";
+  provider: "local" | "openai" | "ollama";
   apiKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
 }
 
 export function createEmbeddingProvider(config: EmbeddingConfig): EmbeddingProvider {
   if (config.provider === "openai") {
     if (!config.apiKey) throw new Error("OpenAI API key required for openai embedding provider");
     return new OpenAIEmbeddingProvider(config.apiKey);
+  }
+  if (config.provider === "ollama") {
+    return new OllamaEmbeddingProvider(config.ollamaBaseUrl, config.ollamaModel);
   }
   return new LocalEmbeddingProvider();
 }
