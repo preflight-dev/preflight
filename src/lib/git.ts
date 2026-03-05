@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -33,6 +33,57 @@ export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {
 /** Convenience: run a raw command string (split on spaces). Only for simple, known-safe commands. */
 function gitCmd(cmdStr: string, opts?: { timeout?: number }): string {
   return run(cmdStr.split(/\s+/), opts);
+}
+
+/**
+ * Run a shell command string (pipes, redirects, &&, || all work).
+ * Use for commands that genuinely need shell features (piping, redirects, non-git commands).
+ * SECURITY: Never pass unsanitized user input. Use shellEscape() for dynamic values.
+ * Returns stdout on success, descriptive error string on failure.
+ */
+export function shell(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    const timedOut = e.killed === true || e.signal === "SIGTERM";
+    if (timedOut) {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
+}
+
+/**
+ * Run a non-git command safely using execFileSync (no shell).
+ * Like run() but for arbitrary executables (cat, wc, find, etc.).
+ */
+export function exec(cmd: string, args: string[], opts: { timeout?: number } = {}): string {
+  try {
+    return execFileSync(cmd, args, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    const timedOut = e.killed === true || e.signal === "SIGTERM";
+    if (timedOut) {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    if (e.code === "ENOENT") return `[${cmd} not found]`;
+    return `[command failed: ${cmd} ${args.join(" ")} (exit ${e.status ?? "?"})]`;
+  }
 }
 
 /** Get the current branch name. */
