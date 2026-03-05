@@ -1,0 +1,47 @@
+# .preflight/triage.yml
+# Customize how the triage engine classifies your prompts.
+# These rules are merged with defaults — you only need to list additions.
+
+# Strictness controls the overall sensitivity:
+#   relaxed  — fewer interruptions, only catches obvious issues
+#   standard — balanced (default)
+#   strict   — catches more edge cases, may over-flag
+strictness: standard
+
+rules:
+  # Prompts containing these keywords are ALWAYS flagged for review,
+  # even if they look clear. Use for high-risk areas of your codebase.
+  always_check:
+    - migration
+    - schema
+    - permissions
+    - billing
+    - rewards
+    # Add your own:
+    # - deployment
+    # - pricing
+    # - auth
+
+  # Prompts matching these are passed through without checks.
+  # Use for routine commands you run constantly.
+  skip:
+    - commit
+    - format
+    - lint
+    - status
+    # Add your own:
+    # - test
+    # - build
+
+  # Keywords that trigger cross-service contract analysis.
+  # When these appear, preflight will check related_projects
+  # for type/route/schema conflicts.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    # Add your own:
+    # - payment
+    # - user
+    # - api
