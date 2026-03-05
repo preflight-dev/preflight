@@ -1,0 +1,34 @@
+# .preflight/config.yml
+# Copy this directory to your project root and customize.
+# All fields are optional — defaults are used for anything you omit.
+
+# Profile controls how aggressively preflight intercepts prompts:
+#   minimal  — only catch the most ambiguous prompts
+#   standard — balanced (default)
+#   full     — check everything, including clear-looking prompts
+profile: standard
+
+# Related projects for cross-service contract awareness.
+# Preflight will extract types, routes, and schemas from these
+# so it can warn you about breaking changes across repos.
+related_projects:
+  # - path: ../api-server
+  #   alias: api
+  # - path: ../shared-types
+  #   alias: types
+
+# Tuning knobs
+thresholds:
+  # Minutes before a session is considered stale (affects context freshness warnings)
+  session_stale_minutes: 30
+  # Tool calls before preflight suggests a checkpoint
+  max_tool_calls_before_checkpoint: 100
+  # How many keyword matches needed to trigger a correction pattern warning
+  correction_pattern_threshold: 3
+
+# Embedding provider for semantic search over session history.
+# "local" uses a built-in model (no API key needed, slower).
+# "openai" uses text-embedding-3-small (faster, requires key).
+embeddings:
+  provider: local
+  # openai_api_key: sk-...  # or set OPENAI_API_KEY env var
