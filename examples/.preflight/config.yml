@@ -1,0 +1,44 @@
+# .preflight/config.yml — Drop this in your project root
+#
+# This is the main preflight configuration file. Every field is optional;
+# defaults are sensible for most projects. Commit this to your repo so
+# your whole team gets the same preflight behavior.
+#
+# Docs: https://github.com/TerminalGravity/preflight#configuration-reference
+
+# Profile controls how verbose preflight is:
+#   "minimal"  — only flag ambiguous+, skip clarification detail
+#   "standard" — default behavior (recommended)
+#   "full"     — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service awareness.
+# Preflight will search these projects' LanceDB indexes and contract
+# registries when it detects cross-service prompts. This prevents the
+# common failure: changing a shared type in one service and forgetting
+# the consumers.
+related_projects:
+  - path: /Users/you/projects/auth-service
+    alias: auth
+  - path: /Users/you/projects/shared-types
+    alias: shared-types
+  # Add more as needed:
+  # - path: /Users/you/projects/notifications
+  #   alias: notifications
+
+# Behavioral thresholds — tune these to your workflow
+thresholds:
+  # Warn if no session activity for this many minutes
+  session_stale_minutes: 30
+  # Suggest a checkpoint after this many tool calls
+  max_tool_calls_before_checkpoint: 100
+  # Minimum corrections before preflight learns a pattern
+  correction_pattern_threshold: 3
+
+# Embedding configuration for semantic search
+embeddings:
+  # "local" uses Xenova (no API key needed, runs on-device)
+  # "openai" uses OpenAI embeddings (faster, requires key)
+  provider: local
+  # Only needed if provider is "openai":
+  # openai_api_key: sk-...
