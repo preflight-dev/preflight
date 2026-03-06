@@ -36,7 +36,10 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      // run() uses execFileSync — no shell syntax; use array args with fallback
+      let recentFilesRaw = run(["diff", "--name-only", "HEAD~10"]);
+      if (recentFilesRaw.startsWith("[")) recentFilesRaw = "";
+      const recentFiles = recentFilesRaw.split("\n").filter(Boolean);
       const sections: string[] = [];
 
       // Doc freshness
@@ -75,7 +78,10 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(run("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        // run() only runs git commands; use git ls-files to find test files instead of shell `find`
+        const testFilesList = run(["ls-files", "tests/"]);
+        const testFilesCount = testFilesList.startsWith("[") ? 0
+          : testFilesList.split("\n").filter(f => /\.(spec|test)\.(ts|tsx|js|jsx)$/.test(f)).length;
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;

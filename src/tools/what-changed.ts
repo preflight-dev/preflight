@@ -12,8 +12,14 @@ export function registerWhatChanged(server: McpServer): void {
     async ({ since }) => {
       const ref = since || "HEAD~5";
       const diffStat = getDiffStat(ref);
-      const diffFiles = run(`git diff ${ref} --name-only 2>/dev/null || git diff HEAD~3 --name-only`);
-      const log = run(`git log ${ref}..HEAD --oneline 2>/dev/null || git log -5 --oneline`);
+
+      // Use array args — run() uses execFileSync, shell operators don't work
+      let diffFiles = run(["diff", "--name-only", ref]);
+      if (diffFiles.startsWith("[")) diffFiles = run(["diff", "--name-only", "HEAD~3"]);
+
+      let log = run(["log", `${ref}..HEAD`, "--oneline"]);
+      if (log.startsWith("[")) log = run(["log", "-5", "--oneline"]);
+
       const branch = getBranch();
 
       const fileList = diffFiles.split("\n").filter(Boolean);
