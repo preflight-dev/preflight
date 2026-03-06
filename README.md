@@ -122,6 +122,12 @@ npm install -g preflight-dev
 claude mcp add preflight -- preflight-dev
 ```
 
+To run the interactive setup wizard instead (creates `.mcp.json` and `.preflight/` config):
+
+```bash
+preflight-dev init
+```
+
 ---
 
 ## How It Works

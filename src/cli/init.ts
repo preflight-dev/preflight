@@ -110,15 +110,6 @@ async function main(): Promise<void> {
     env,
   };
 
-  // For the actual server entry point, we need to point to index.ts via tsx
-  // But npx will resolve the bin entry which is the init script
-  // So use a different approach: command runs the server
-  config.mcpServers["preflight"] = {
-    command: "npx",
-    args: ["-y", "tsx", "node_modules/preflight/src/index.ts"],
-    env,
-  };
-
   await writeFile(mcpPath, JSON.stringify(config, null, 2) + "\n");
 
   console.log(`\n✅ preflight added! (profile: ${profile})`);
