@@ -102,17 +102,86 @@ class OpenAIEmbeddingProvider implements EmbeddingProvider {
   }
 }
 
+// --- Ollama Provider ---
+
+class OllamaEmbeddingProvider implements EmbeddingProvider {
+  dimensions: number;
+  private baseUrl: string;
+  private model: string;
+
+  constructor(opts?: { baseUrl?: string; model?: string; dimensions?: number }) {
+    this.baseUrl = (opts?.baseUrl ?? "http://localhost:11434").replace(/\/+$/, "");
+    this.model = opts?.model ?? "nomic-embed-text";
+    // Default dimensions for nomic-embed-text; override if using a different model
+    this.dimensions = opts?.dimensions ?? 768;
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const processed = preprocessText(text);
+    const resp = await fetch(`${this.baseUrl}/api/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: this.model, input: processed }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Ollama embed API error ${resp.status}: ${err}`);
+    }
+
+    const data: any = await resp.json();
+    // Ollama /api/embed returns { embeddings: number[][] }
+    if (!data.embeddings?.[0]) {
+      throw new Error("Ollama returned empty embeddings");
+    }
+    return data.embeddings[0];
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    const processed = texts.map(preprocessText);
+    const resp = await fetch(`${this.baseUrl}/api/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: this.model, input: processed }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Ollama embed API error ${resp.status}: ${err}`);
+    }
+
+    const data: any = await resp.json();
+    if (!Array.isArray(data.embeddings) || data.embeddings.length !== texts.length) {
+      throw new Error(`Ollama returned ${data.embeddings?.length ?? 0} embeddings, expected ${texts.length}`);
+    }
+    return data.embeddings;
+  }
+}
+
 // --- Factory ---
 
 export interface EmbeddingConfig {
-  provider: "local" | "openai";
+  provider: "local" | "openai" | "ollama";
   apiKey?: string;
+  /** Ollama base URL (default: http://localhost:11434) */
+  ollamaBaseUrl?: string;
+  /** Ollama model name (default: nomic-embed-text) */
+  ollamaModel?: string;
+  /** Override embedding dimensions for custom models */
+  ollamaDimensions?: number;
 }
 
 export function createEmbeddingProvider(config: EmbeddingConfig): EmbeddingProvider {
   if (config.provider === "openai") {
     if (!config.apiKey) throw new Error("OpenAI API key required for openai embedding provider");
     return new OpenAIEmbeddingProvider(config.apiKey);
+  }
+  if (config.provider === "ollama") {
+    return new OllamaEmbeddingProvider({
+      baseUrl: config.ollamaBaseUrl,
+      model: config.ollamaModel,
+      dimensions: config.ollamaDimensions,
+    });
   }
   return new LocalEmbeddingProvider();
 }

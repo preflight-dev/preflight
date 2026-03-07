@@ -30,7 +30,7 @@ export function registerOnboardProject(server: McpServer) {
     "Index a project's Claude Code sessions and git history into the timeline database for semantic search and chronological viewing.",
     {
       project_dir: z.string().describe("Absolute path to the project directory"),
-      embedding_provider: z.enum(["local", "openai"]).default("local"),
+      embedding_provider: z.enum(["local", "openai", "ollama"]).default("local"),
       openai_api_key: z.string().optional(),
       git_depth: z.enum(["all", "6months", "1year", "3months"]).default("all"),
       git_since: z.string().optional().describe("Override git_depth with exact start date (ISO: '2025-08-01')"),

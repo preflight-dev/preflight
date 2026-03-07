@@ -63,4 +63,19 @@ describe("createEmbeddingProvider", () => {
     });
     expect(provider.dimensions).toBe(1536);
   });
+
+  it("returns ollama provider with default 768 dimensions", () => {
+    const provider = createEmbeddingProvider({ provider: "ollama" });
+    expect(provider.dimensions).toBe(768);
+  });
+
+  it("accepts custom ollama base URL and model", () => {
+    const provider = createEmbeddingProvider({
+      provider: "ollama",
+      ollamaBaseUrl: "http://myhost:11434",
+      ollamaModel: "mxbai-embed-large",
+      ollamaDimensions: 1024,
+    });
+    expect(provider.dimensions).toBe(1024);
+  });
 });
