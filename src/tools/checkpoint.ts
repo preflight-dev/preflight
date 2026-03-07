@@ -63,32 +63,33 @@ ${dirty || "clean"}
         const shortSummary = summary.split("\n")[0].slice(0, 72);
         const commitMsg = `checkpoint: ${shortSummary}`;
 
-        let addCmd: string;
+        let addArgs: string[] | null = null; // null = noop (already staged)
         switch (mode) {
           case "staged": {
             const staged = getStagedFiles();
             if (!staged) {
               commitResult = "nothing staged — skipped commit (use 'tracked' or 'all' mode, or stage files first)";
             }
-            addCmd = "true"; // noop, already staged
+            addArgs = null; // noop, already staged
             break;
           }
           case "all":
-            addCmd = "git add -A";
+            addArgs = ["add", "-A"];
             break;
           case "tracked":
           default:
-            addCmd = "git add -u";
+            addArgs = ["add", "-u"];
             break;
         }
 
         if (commitResult === "no uncommitted changes") {
           // Stage the checkpoint file too
-          run(`git add "${checkpointFile}"`);
-          const result = run(`${addCmd} && git commit -m "${commitMsg.replace(/"/g, '\\"')}" 2>&1`);
+          run(["add", checkpointFile]);
+          if (addArgs) run(addArgs);
+          const result = run(["commit", "-m", commitMsg]);
           if (result.includes("commit failed") || result.includes("nothing to commit")) {
             // Rollback: unstage if commit failed
-            run("git reset HEAD 2>/dev/null");
+            run(["reset", "HEAD"]);
             commitResult = `commit failed: ${result}`;
           } else {
             commitResult = result;
