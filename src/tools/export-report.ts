@@ -1,48 +1,9 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getTimeline, listIndexedProjects } from "../lib/timeline-db.js";
-import { getRelatedProjects } from "../lib/config.js";
+import { getTimeline } from "../lib/timeline-db.js";
+import { getSearchProjects } from "../lib/search-projects.js";
+import { TYPE_LABELS, TYPE_ICONS } from "../lib/event-labels.js";
 import type { SearchScope } from "../types.js";
-
-const TYPE_LABELS: Record<string, string> = {
-  prompt: "Prompts",
-  assistant: "Responses",
-  tool_call: "Tool Calls",
-  correction: "Corrections",
-  commit: "Commits",
-  compaction: "Compactions",
-  sub_agent_spawn: "Sub-agent Spawns",
-  error: "Errors",
-};
-
-const TYPE_ICONS: Record<string, string> = {
-  prompt: "💬",
-  assistant: "🤖",
-  tool_call: "🔧",
-  correction: "❌",
-  commit: "📦",
-  compaction: "🗜️",
-  sub_agent_spawn: "🚀",
-  error: "⚠️",
-};
-
-async function getSearchProjects(scope: SearchScope): Promise<string[]> {
-  const currentProject = process.env.CLAUDE_PROJECT_DIR;
-  switch (scope) {
-    case "current":
-      return currentProject ? [currentProject] : [];
-    case "related": {
-      const related = getRelatedProjects();
-      return currentProject ? [currentProject, ...related] : related;
-    }
-    case "all": {
-      const projects = await listIndexedProjects();
-      return projects.map((p) => p.project);
-    }
-    default:
-      return currentProject ? [currentProject] : [];
-  }
-}
 
 function getDateRange(
   period: string,

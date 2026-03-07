@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { searchSemantic, listIndexedProjects } from "../lib/timeline-db.js";
-import { getRelatedProjects } from "../lib/config.js";
-import type { SearchScope } from "../types.js";
+import { searchSemantic } from "../lib/timeline-db.js";
+import { getSearchProjects } from "../lib/search-projects.js";
+import { TYPE_ICONS } from "../lib/event-labels.js";
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
@@ -19,37 +19,10 @@ function parseRelativeDate(input: string): string {
   return d.toISOString();
 }
 
-const TYPE_BADGES: Record<string, string> = {
-  prompt: "💬 prompt",
-  assistant: "🤖 assistant",
-  correction: "❌ correction",
-  commit: "📦 commit",
-  tool_call: "🔧 tool_call",
-  compaction: "🗜️ compaction",
-  sub_agent_spawn: "🚀 sub_agent_spawn",
-  error: "⚠️ error",
-};
-
-/** Get project directories to search based on scope */
-async function getSearchProjects(scope: SearchScope): Promise<string[]> {
-  const currentProject = process.env.CLAUDE_PROJECT_DIR;
-  
-  switch (scope) {
-    case "current":
-      return currentProject ? [currentProject] : [];
-      
-    case "related": {
-      const related = getRelatedProjects();
-      return currentProject ? [currentProject, ...related] : related;
-    }
-    case "all": {
-      const projects = await listIndexedProjects();
-      return projects.map(p => p.project);
-    }
-    default:
-      return currentProject ? [currentProject] : [];
-  }
-}
+/** TYPE_BADGES combines icon + type name for search result display */
+const TYPE_BADGES: Record<string, string> = Object.fromEntries(
+  Object.entries(TYPE_ICONS).map(([k, icon]) => [k, `${icon} ${k}`])
+);
 
 export function registerSearchHistory(server: McpServer) {
   server.tool(
