@@ -119,8 +119,10 @@ Restart Claude Code. The tools activate automatically.
 
 ```bash
 npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
+claude mcp add preflight -- npx tsx $(npm root -g)/preflight-dev/src/index.ts
 ```
+
+> **Note:** The `preflight-dev` CLI binary runs the interactive setup wizard (`preflight init`), not the MCP server. To register the server with Claude Code, point directly at the server entry point as shown above.
 
 ---
 

@@ -104,18 +104,12 @@ async function main(): Promise<void> {
     }
   }
 
+  // Use npx with tsx to run the server entry point from the installed package.
+  // The bin entry (preflight-dev) runs the init CLI, so we point directly at
+  // the MCP server source via the installed package path.
   config.mcpServers["preflight"] = {
     command: "npx",
-    args: ["-y", "preflight-dev@latest"],
-    env,
-  };
-
-  // For the actual server entry point, we need to point to index.ts via tsx
-  // But npx will resolve the bin entry which is the init script
-  // So use a different approach: command runs the server
-  config.mcpServers["preflight"] = {
-    command: "npx",
-    args: ["-y", "tsx", "node_modules/preflight/src/index.ts"],
+    args: ["-y", "tsx", "node_modules/preflight-dev/src/index.ts"],
     env,
   };
 
