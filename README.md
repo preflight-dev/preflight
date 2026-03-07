@@ -321,6 +321,7 @@ After onboarding, you get:
 | Tool | What it does |
 |------|-------------|
 | `generate_scorecard` | 12-category report card — session, trend (week/month), or cross-project comparative. Radar chart SVG, PDF or markdown. |
+| `export_timeline` | Generate markdown session reports — summary stats, daily activity, prompt quality trends, correction/error logs, commit history |
 | `estimate_cost` | Token usage, dollar cost, waste from corrections, preflight savings |
 | `session_stats` | Lightweight session analysis — no embeddings needed |
 | `prompt_score` | Gamified A–F grading on specificity, scope, actionability, done-condition |
