@@ -268,11 +268,11 @@ Run `onboard_project` to index a project's history. Here's what happens:
 2. **Parses events** — extracts the 8 event types from each session file (streams files >10MB)
 3. **Extracts contracts** — scans source for types, interfaces, enums, routes, Prisma models, OpenAPI schemas
 4. **Loads manual contracts** — merges any `.preflight/contracts/*.yml` definitions (manual wins on name conflicts)
-5. **Generates embeddings** — local [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) by default (~90MB model download on first run, ~50 events/sec) or OpenAI if `OPENAI_API_KEY` is set (~200 events/sec)
+5. **Generates embeddings** — local [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) by default (~90MB model download on first run, ~50 events/sec), OpenAI if `OPENAI_API_KEY` is set (~200 events/sec), or Ollama for local embeddings with better quality (~100 events/sec)
 6. **Stores in LanceDB** — per-project database at `~/.preflight/projects/<sha256-12>/timeline.lance/`
 7. **Updates registry** — records the project in `~/.preflight/projects/index.json`
 
-No data leaves your machine unless you opt into OpenAI embeddings.
+No data leaves your machine unless you opt into OpenAI embeddings. Ollama embeddings also run 100% locally.
 
 After onboarding, you get:
 - 🔎 **Semantic search** — "How did I set up auth middleware last month?" actually works
@@ -430,8 +430,10 @@ thresholds:
 
 # Embedding configuration
 embeddings:
-  provider: local                          # type: "local" | "openai"
+  provider: local                          # type: "local" | "openai" | "ollama"
   openai_api_key: sk-...                   # type: string — only needed if provider is "openai"
+  ollama_base_url: http://localhost:11434   # type: string — Ollama server URL (default shown)
+  ollama_model: nomic-embed-text           # type: string — Ollama embedding model (default shown)
 ```
 
 ### `.preflight/triage.yml`
@@ -495,7 +497,9 @@ Manual contract definitions that supplement auto-extraction:
 | `CLAUDE_PROJECT_DIR` | Project root to monitor | **Required** |
 | `OPENAI_API_KEY` | OpenAI key for embeddings | Uses local Xenova |
 | `PREFLIGHT_RELATED` | Comma-separated related project paths | None |
-| `EMBEDDING_PROVIDER` | `local` or `openai` | `local` |
+| `EMBEDDING_PROVIDER` | `local`, `openai`, or `ollama` | `local` |
+| `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Ollama embedding model | `nomic-embed-text` |
 | `PROMPT_DISCIPLINE_PROFILE` | `minimal`, `standard`, or `full` | `standard` |
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
@@ -508,8 +512,11 @@ Environment variables are **fallbacks** — `.preflight/` config takes precedenc
 |----------|-------|-------|-----------|---------|---------|
 | **Local (Xenova)** | Zero config | ~50 events/sec | 384 | Good | 100% local |
 | **OpenAI** | Set `OPENAI_API_KEY` | ~200 events/sec | 1536 | Excellent | API call |
+| **Ollama** | `ollama pull nomic-embed-text` | ~100 events/sec | 768 | Very good | 100% local |
 
 First run with local embeddings downloads the [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) model (~90MB). After that, everything runs offline.
+
+For Ollama, install [Ollama](https://ollama.com), pull an embedding model (`ollama pull nomic-embed-text`), and set `EMBEDDING_PROVIDER=ollama`. Any Ollama model that supports the `/api/embed` endpoint works — configure the model name via `OLLAMA_MODEL`.
 
 ---
 
