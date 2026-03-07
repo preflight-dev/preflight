@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "preflight-dev",
+  "description": "24-tool MCP server for Claude Code: preflight checks for prompts, cross-service context, session history search with LanceDB vectors, correction pattern learning, cost estimation",
+  "repository": {
+    "url": "https://github.com/preflight-dev/preflight",
+    "source": "github",
+    "id": "1156411733"
+  },
+  "version": "3.2.0",
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "preflight-dev",
+      "version": "3.2.0"
+    }
+  ]
+}
