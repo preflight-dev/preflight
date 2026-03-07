@@ -602,6 +602,86 @@ src/
     └── ...                  # One file per tool
 ```
 
+## Troubleshooting
+
+### "CLAUDE_PROJECT_DIR is required" / tools return empty results
+
+Preflight needs to know which project to monitor. Set it when adding the MCP server:
+
+```bash
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/absolute/path/to/your/project \
+  -- npx tsx /path/to/preflight/src/index.ts
+```
+
+Or in `.mcp.json`:
+
+```json
+"env": { "CLAUDE_PROJECT_DIR": "/absolute/path/to/your/project" }
+```
+
+**Must be an absolute path.** Relative paths like `./` or `../myproject` won't resolve correctly.
+
+### First run is slow / "Downloading model..." hangs
+
+The default local embedding provider downloads [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) (~90MB) on first use. This is a one-time download — subsequent runs use the cached model. If you're behind a corporate proxy, set `HTTPS_PROXY` before running.
+
+To skip the wait entirely, use OpenAI embeddings instead:
+
+```bash
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/path/to/project \
+  -e EMBEDDING_PROVIDER=openai \
+  -e OPENAI_API_KEY=sk-... \
+  -- npx tsx /path/to/preflight/src/index.ts
+```
+
+### LanceDB errors / "Cannot open database" / timeline search fails
+
+LanceDB stores vector data in `~/.preflight/projects/<hash>/timeline.lance/`. Common fixes:
+
+1. **Corrupted database** — delete the project's data directory and re-onboard:
+   ```bash
+   # Find your project hash
+   cat ~/.preflight/projects/index.json
+   # Delete and re-index
+   rm -rf ~/.preflight/projects/<your-hash>
+   ```
+   Then run `onboard_project` again from Claude Code.
+
+2. **Permissions** — ensure `~/.preflight/` is writable by your user.
+
+3. **Disk space** — LanceDB databases grow with session history. A project with 10K events uses ~50MB.
+
+### Node version errors / "SyntaxError: Unexpected token"
+
+Preflight requires **Node.js 20+**. Check with `node -v`. If you're on Node 18, upgrade — the project uses modern ES features that aren't available in older versions.
+
+### "No session files found" when onboarding
+
+Preflight reads Claude Code session history from `~/.claude/projects/`. If this directory is empty:
+
+- You haven't used Claude Code on this project yet (use it first, then onboard)
+- Your Claude Code installation uses a non-standard config path — check `CLAUDE_CONFIG_DIR`
+
+### Tools show up but never fire / preflight seems inactive
+
+Make sure you're invoking tools through Claude Code's MCP interface, not calling them directly. Preflight runs as a **server** — Claude Code connects to it and calls tools automatically based on your prompts.
+
+If tools are registered but not firing, try:
+```bash
+claude mcp remove preflight
+claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+```
+
+### `.preflight/` config not loading
+
+- Config files must be in your **project root** (the `CLAUDE_PROJECT_DIR`), not the preflight installation directory
+- Files must be named exactly: `config.yml`, `triage.yml`, or placed in `contracts/`
+- YAML syntax errors fail silently — validate with `npx yaml-lint .preflight/config.yml`
+
+---
+
 ## License
 
 MIT — do whatever you want with it.
