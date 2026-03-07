@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getTimeline, listIndexedProjects } from "../lib/timeline-db.js";
-import { getRelatedProjects } from "../lib/config.js";
-import type { SearchScope } from "../types.js";
+import { getTimeline } from "../lib/timeline-db.js";
+import { getSearchProjects } from "../lib/search-projects.js";
+import { TYPE_ICONS } from "../lib/event-labels.js";
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
@@ -17,38 +17,6 @@ function parseRelativeDate(input: string): string {
   else if (unit.startsWith("month")) d.setMonth(d.getMonth() - num);
   else if (unit.startsWith("year")) d.setFullYear(d.getFullYear() - num);
   return d.toISOString();
-}
-
-const TYPE_ICONS: Record<string, string> = {
-  prompt: "💬",
-  assistant: "🤖",
-  tool_call: "🔧",
-  correction: "❌",
-  commit: "📦",
-  compaction: "🗜️",
-  sub_agent_spawn: "🚀",
-  error: "⚠️",
-};
-
-/** Get project directories to search based on scope */
-async function getSearchProjects(scope: SearchScope): Promise<string[]> {
-  const currentProject = process.env.CLAUDE_PROJECT_DIR;
-  
-  switch (scope) {
-    case "current":
-      return currentProject ? [currentProject] : [];
-      
-    case "related": {
-      const related = getRelatedProjects();
-      return currentProject ? [currentProject, ...related] : related;
-    }
-    case "all": {
-      const projects = await listIndexedProjects();
-      return projects.map(p => p.project);
-    }
-    default:
-      return currentProject ? [currentProject] : [];
-  }
 }
 
 export function registerTimeline(server: McpServer) {
