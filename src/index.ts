@@ -48,6 +48,7 @@ import { registerTimeline } from "./tools/timeline-view.js";
 import { registerScanSessions } from "./tools/scan-sessions.js";
 import { registerGenerateScorecard } from "./tools/generate-scorecard.js";
 import { registerSearchContracts } from "./tools/search-contracts.js";
+import { registerExportReport } from "./tools/export-report.js";
 import { registerEstimateCost } from "./tools/estimate-cost.js";
 
 // Validate related projects from config
@@ -110,6 +111,7 @@ const toolRegistry: Array<[string, RegisterFn]> = [
   ["generate_scorecard", registerGenerateScorecard],
   ["estimate_cost", registerEstimateCost],
   ["search_contracts", registerSearchContracts],
+  ["export_report", registerExportReport],
 ];
 
 let registered = 0;
