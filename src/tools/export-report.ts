@@ -3,51 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getTimeline } from "../lib/timeline-db.js";
 import { getSearchProjects } from "../lib/search-projects.js";
 import { TYPE_LABELS, TYPE_ICONS } from "../lib/event-labels.js";
+import { getDateRange } from "../lib/date-range.js";
 import type { SearchScope } from "../types.js";
-
-function getDateRange(
-  period: string,
-  customSince?: string,
-  customUntil?: string,
-): { since: string; until: string; label: string } {
-  const now = new Date();
-
-  if (period === "custom" && customSince) {
-    return {
-      since: customSince,
-      until: customUntil || now.toISOString(),
-      label: `${customSince.slice(0, 10)} to ${(customUntil || now.toISOString()).slice(0, 10)}`,
-    };
-  }
-
-  const end = new Date(now);
-  const start = new Date(now);
-
-  switch (period) {
-    case "today":
-      start.setHours(0, 0, 0, 0);
-      return { since: start.toISOString(), until: end.toISOString(), label: start.toISOString().slice(0, 10) };
-    case "yesterday": {
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(start);
-      endOfDay.setHours(23, 59, 59, 999);
-      return { since: start.toISOString(), until: endOfDay.toISOString(), label: start.toISOString().slice(0, 10) };
-    }
-    case "week":
-      start.setDate(start.getDate() - 7);
-      return { since: start.toISOString(), until: end.toISOString(), label: `Week of ${start.toISOString().slice(0, 10)}` };
-    case "month":
-      start.setMonth(start.getMonth() - 1);
-      return { since: start.toISOString(), until: end.toISOString(), label: `Past month (${start.toISOString().slice(0, 10)} – ${end.toISOString().slice(0, 10)})` };
-    case "sprint":
-      start.setDate(start.getDate() - 14);
-      return { since: start.toISOString(), until: end.toISOString(), label: `Sprint (${start.toISOString().slice(0, 10)} – ${end.toISOString().slice(0, 10)})` };
-    default:
-      start.setDate(start.getDate() - 7);
-      return { since: start.toISOString(), until: end.toISOString(), label: `Week of ${start.toISOString().slice(0, 10)}` };
-  }
-}
 
 interface TypeStats {
   count: number;
