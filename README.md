@@ -495,7 +495,9 @@ Manual contract definitions that supplement auto-extraction:
 | `CLAUDE_PROJECT_DIR` | Project root to monitor | **Required** |
 | `OPENAI_API_KEY` | OpenAI key for embeddings | Uses local Xenova |
 | `PREFLIGHT_RELATED` | Comma-separated related project paths | None |
-| `EMBEDDING_PROVIDER` | `local` or `openai` | `local` |
+| `EMBEDDING_PROVIDER` | `local`, `openai`, or `ollama` | `local` |
+| `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
+| `OLLAMA_EMBED_MODEL` | Ollama embedding model | `nomic-embed-text` |
 | `PROMPT_DISCIPLINE_PROFILE` | `minimal`, `standard`, or `full` | `standard` |
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
@@ -507,6 +509,7 @@ Environment variables are **fallbacks** — `.preflight/` config takes precedenc
 | Provider | Setup | Speed | Dimensions | Quality | Privacy |
 |----------|-------|-------|-----------|---------|---------|
 | **Local (Xenova)** | Zero config | ~50 events/sec | 384 | Good | 100% local |
+| **Ollama** | `ollama pull nomic-embed-text` | ~100 events/sec | 768 | Very good | 100% local |
 | **OpenAI** | Set `OPENAI_API_KEY` | ~200 events/sec | 1536 | Excellent | API call |
 
 First run with local embeddings downloads the [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) model (~90MB). After that, everything runs offline.
