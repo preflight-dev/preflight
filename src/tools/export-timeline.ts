@@ -6,7 +6,7 @@ import type { SearchScope } from "../types.js";
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
-function parseRelativeDate(input: string): string {
+export function parseRelativeDate(input: string): string {
   const match = input.match(RELATIVE_DATE_RE);
   if (!match) return input;
   const [, numStr, unit] = match;
@@ -58,7 +58,7 @@ interface ReportStats {
   avgEventsPerDay: number;
 }
 
-function computeStats(events: any[]): ReportStats {
+export function computeStats(events: any[]): ReportStats {
   const byType: Record<string, number> = {};
   const byDay = new Map<string, number>();
   let corrections = 0;
@@ -87,7 +87,7 @@ function computeStats(events: any[]): ReportStats {
   };
 }
 
-function generateMarkdownReport(
+export function generateMarkdownReport(
   events: any[],
   stats: ReportStats,
   opts: { project: string; since?: string; until?: string; period: string }
