@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
@@ -79,16 +79,12 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 ### Option A: Claude Code CLI (fastest)
 
 ```bash
-claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
-```
-
-With environment variables:
-
-```bash
 claude mcp add preflight \
   -e CLAUDE_PROJECT_DIR=/path/to/your/project \
   -- npx tsx /path/to/preflight/src/index.ts
 ```
+
+> **Note:** `CLAUDE_PROJECT_DIR` must be an **absolute path** to the project you want preflight to monitor. Without it, most tools will return empty results.
 
 ### Option B: Clone & configure manually
 
@@ -119,7 +115,9 @@ Restart Claude Code. The tools activate automatically.
 
 ```bash
 npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/path/to/your/project \
+  -- preflight-dev
 ```
 
 ---
