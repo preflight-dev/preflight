@@ -1,0 +1,275 @@
+import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { getTimeline, listIndexedProjects } from "../lib/timeline-db.js";
+import { getRelatedProjects } from "../lib/config.js";
+import type { SearchScope } from "../types.js";
+
+const TYPE_ICONS: Record<string, string> = {
+  prompt: "💬",
+  assistant: "🤖",
+  tool_call: "🔧",
+  correction: "❌",
+  commit: "📦",
+  compaction: "🗜️",
+  sub_agent_spawn: "🚀",
+  error: "⚠️",
+};
+
+async function getSearchProjects(scope: SearchScope): Promise<string[]> {
+  const currentProject = process.env.CLAUDE_PROJECT_DIR;
+  switch (scope) {
+    case "current":
+      return currentProject ? [currentProject] : [];
+    case "related": {
+      const related = getRelatedProjects();
+      return currentProject ? [currentProject, ...related] : related;
+    }
+    case "all": {
+      const projects = await listIndexedProjects();
+      return projects.map((p) => p.project);
+    }
+    default:
+      return currentProject ? [currentProject] : [];
+  }
+}
+
+interface TimelineEvent {
+  timestamp?: string;
+  type: string;
+  content?: string;
+  summary?: string;
+  commit_hash?: string;
+  tool_name?: string;
+  metadata?: string;
+}
+
+function buildReport(
+  events: TimelineEvent[],
+  format: "markdown" | "summary",
+  title: string,
+  dateRange: string
+): string {
+  // Group by day
+  const days = new Map<string, TimelineEvent[]>();
+  for (const event of events) {
+    const day = event.timestamp
+      ? new Date(event.timestamp).toISOString().slice(0, 10)
+      : "unknown";
+    if (!days.has(day)) days.set(day, []);
+    days.get(day)!.push(event);
+  }
+  const sortedDays = [...days.keys()].sort().reverse();
+
+  // Compute stats
+  const typeCounts = new Map<string, number>();
+  for (const e of events) {
+    typeCounts.set(e.type, (typeCounts.get(e.type) || 0) + 1);
+  }
+
+  const lines: string[] = [];
+  lines.push(`# ${title}`);
+  lines.push(`> ${dateRange} · ${events.length} events across ${sortedDays.length} day(s)`);
+  lines.push("");
+
+  // Stats table
+  lines.push("## Summary");
+  lines.push("");
+  lines.push("| Type | Count |");
+  lines.push("|------|-------|");
+  for (const [type, count] of [...typeCounts.entries()].sort((a, b) => b[1] - a[1])) {
+    const icon = TYPE_ICONS[type] || "❓";
+    lines.push(`| ${icon} ${type} | ${count} |`);
+  }
+  lines.push("");
+
+  // Quality indicators
+  const corrections = typeCounts.get("correction") || 0;
+  const prompts = typeCounts.get("prompt") || 0;
+  const errors = typeCounts.get("error") || 0;
+  const commits = typeCounts.get("commit") || 0;
+
+  if (prompts > 0) {
+    const correctionRate = ((corrections / prompts) * 100).toFixed(1);
+    lines.push("## Quality Indicators");
+    lines.push("");
+    lines.push(`- **Correction rate:** ${correctionRate}% (${corrections} corrections / ${prompts} prompts)`);
+    lines.push(`- **Error count:** ${errors}`);
+    lines.push(`- **Commits:** ${commits}`);
+    if (prompts > 0 && commits > 0) {
+      lines.push(`- **Prompts per commit:** ${(prompts / commits).toFixed(1)}`);
+    }
+    lines.push("");
+  }
+
+  if (format === "summary") {
+    // Summary mode: just stats + daily event counts
+    lines.push("## Daily Activity");
+    lines.push("");
+    for (const day of sortedDays) {
+      const dayEvents = days.get(day)!;
+      const dayCounts = new Map<string, number>();
+      for (const e of dayEvents) {
+        dayCounts.set(e.type, (dayCounts.get(e.type) || 0) + 1);
+      }
+      const parts = [...dayCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([t, c]) => `${TYPE_ICONS[t] || "❓"}${c}`)
+        .join(" ");
+      lines.push(`- **${day}** — ${dayEvents.length} events: ${parts}`);
+    }
+    lines.push("");
+  } else {
+    // Full markdown: detailed day-by-day
+    lines.push("## Timeline");
+    lines.push("");
+    for (const day of sortedDays) {
+      lines.push(`### ${day}`);
+      lines.push("");
+      const dayEvents = days.get(day)!;
+      dayEvents.sort((a, b) => {
+        const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return ta - tb;
+      });
+
+      for (const event of dayEvents) {
+        const time = event.timestamp
+          ? new Date(event.timestamp).toISOString().slice(11, 16)
+          : "??:??";
+        const icon = TYPE_ICONS[event.type] || "❓";
+        let content = (event.content || event.summary || "")
+          .slice(0, 200)
+          .replace(/\n/g, " ");
+
+        if (event.type === "commit") {
+          const hash = event.commit_hash ? event.commit_hash.slice(0, 7) : "";
+          content = hash ? `\`${hash}\` ${content}` : content;
+        } else if (event.type === "tool_call") {
+          const tool = event.tool_name || "";
+          content = tool ? `**${tool}** ${content}` : content;
+        }
+
+        lines.push(`- \`${time}\` ${icon} ${content}`);
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push("---");
+  lines.push(`_Generated by preflight export_timeline_`);
+
+  return lines.join("\n");
+}
+
+export function registerExportTimeline(server: McpServer) {
+  server.tool(
+    "export_timeline",
+    "Generate a markdown report from timeline data. Produces session summaries with quality metrics, daily breakdowns, and activity stats. Use format='summary' for a quick overview or 'markdown' for a detailed report.",
+    {
+      scope: z
+        .enum(["current", "related", "all"])
+        .default("current")
+        .describe("Search scope"),
+      project: z.string().optional().describe("Filter to specific project (overrides scope)"),
+      since: z
+        .string()
+        .optional()
+        .describe("Start date (ISO 8601 or relative like '7days', '2weeks')"),
+      until: z.string().optional().describe("End date"),
+      format: z
+        .enum(["markdown", "summary"])
+        .default("markdown")
+        .describe("'markdown' for full detail, 'summary' for stats + daily counts"),
+      branch: z.string().optional(),
+      author: z.string().optional().describe("Filter commits by author (partial match)"),
+      limit: z.number().default(500).describe("Max events to include"),
+    },
+    async (params) => {
+      const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
+      function parseRelativeDate(input: string): string {
+        const match = input.match(RELATIVE_DATE_RE);
+        if (!match) return input;
+        const [, numStr, unit] = match;
+        const num = parseInt(numStr, 10);
+        const d = new Date();
+        if (unit.startsWith("day")) d.setDate(d.getDate() - num);
+        else if (unit.startsWith("week")) d.setDate(d.getDate() - num * 7);
+        else if (unit.startsWith("month")) d.setMonth(d.getMonth() - num);
+        else if (unit.startsWith("year")) d.setFullYear(d.getFullYear() - num);
+        return d.toISOString();
+      }
+
+      const since = params.since ? parseRelativeDate(params.since) : undefined;
+      const until = params.until ? parseRelativeDate(params.until) : undefined;
+
+      let projectDirs: string[];
+      if (params.project) {
+        projectDirs = [params.project];
+      } else {
+        projectDirs = await getSearchProjects(params.scope);
+      }
+
+      if (projectDirs.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `No projects found for scope "${params.scope}". Set CLAUDE_PROJECT_DIR or onboard a project first.`,
+            },
+          ],
+        };
+      }
+
+      let events = await getTimeline({
+        project_dirs: projectDirs,
+        project: undefined,
+        branch: params.branch,
+        since,
+        until,
+        limit: params.limit,
+        offset: 0,
+      });
+
+      // Post-filter by author
+      if (params.author) {
+        const authorLower = params.author.toLowerCase();
+        events = events.filter((e: any) => {
+          if (e.type !== "commit") return true;
+          try {
+            const meta = JSON.parse(e.metadata || "{}");
+            return (meta.author || "").toLowerCase().includes(authorLower);
+          } catch {
+            return true;
+          }
+        });
+      }
+
+      if (events.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "No events found for the given filters. Try a wider date range or different scope.",
+            },
+          ],
+        };
+      }
+
+      const projectName = params.project || "Session Report";
+      const dateRange =
+        since && until
+          ? `${since.slice(0, 10)} to ${until.slice(0, 10)}`
+          : since
+            ? `Since ${since.slice(0, 10)}`
+            : until
+              ? `Until ${until.slice(0, 10)}`
+              : "All time";
+
+      const report = buildReport(events, params.format, projectName, dateRange);
+
+      return {
+        content: [{ type: "text" as const, text: report }],
+      };
+    }
+  );
+}
