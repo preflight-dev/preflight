@@ -4,8 +4,9 @@ import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFil
 import { findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join, basename, resolve } from "path";
+import { execFileSync } from "child_process";
 import { loadAllContracts, searchContracts, formatContracts } from "../lib/contracts.js";
 
 /** Parse test failures from common report formats without fragile shell pipelines */
@@ -152,10 +153,36 @@ export function registerClarifyIntent(server: McpServer): void {
       let hasTestFailures = false;
 
       if (!area || area.includes("test") || area.includes("fix") || area.includes("ui") || area.includes("api")) {
-        const typeErrors = run("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
-        hasTypeErrors = parseInt(typeErrors, 10) > 0;
+        let typeErrorCount = 0;
+        try {
+          const tscOut = execFileSync("npx", ["tsc", "--noEmit"], {
+            cwd: PROJECT_DIR, encoding: "utf-8", timeout: 30000,
+            stdio: ["pipe", "pipe", "pipe"],
+          });
+          typeErrorCount = (tscOut.match(/error TS\d+/g) || []).length;
+        } catch (e: any) {
+          const combined = (e.stdout || "") + (e.stderr || "");
+          typeErrorCount = (combined.match(/error TS\d+/g) || []).length;
+        }
+        const typeErrors = String(typeErrorCount);
+        hasTypeErrors = typeErrorCount > 0;
 
-        const testFiles = run("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
+        // Find test files using Node.js fs
+        const testFiles = (() => {
+          const results: string[] = [];
+          const walk = (dir: string, depth: number) => {
+            if (depth > 4 || results.length >= 20) return;
+            try {
+              for (const entry of readdirSync(dir, { withFileTypes: true })) {
+                if (entry.isDirectory()) walk(join(dir, entry.name), depth + 1);
+                else if (entry.name.endsWith(".spec.ts")) results.push(join(dir, entry.name));
+              }
+            } catch {}
+          };
+          const testsDir = join(PROJECT_DIR, "tests");
+          if (existsSync(testsDir)) walk(testsDir, 0);
+          return results.join("\n");
+        })();
         const failingTests = getTestFailures();
         hasTestFailures = failingTests !== "all passing" && failingTests !== "no test report found";
 

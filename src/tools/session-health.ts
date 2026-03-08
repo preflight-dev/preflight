@@ -27,7 +27,8 @@ export function registerSessionHealth(server: McpServer): void {
       const dirtyCount = dirty ? dirty.split("\n").filter(Boolean).length : 0;
       const lastCommit = getLastCommit();
       const lastCommitTimeStr = getLastCommitTime();
-      const uncommittedDiff = run("git diff --stat | tail -1");
+      const diffStatFull = run(["diff", "--stat"]);
+      const uncommittedDiff = diffStatFull.split("\n").filter(Boolean).pop() || "";
 
       // Parse commit time safely
       const commitDate = parseGitDate(lastCommitTimeStr);

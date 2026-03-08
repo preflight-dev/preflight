@@ -88,9 +88,9 @@ export function registerScopeWork(server: McpServer): void {
       const timestamp = now();
       const currentBranch = branch ?? getBranch();
       const recentCommits = getRecentCommits(10);
-      const porcelain = run("git status --porcelain");
+      const porcelain = run(["status", "--porcelain"]);
       const dirtyFiles = parsePortelainFiles(porcelain);
-      const diffStat = dirtyFiles.length > 0 ? run("git diff --stat") : "(clean working tree)";
+      const diffStat = dirtyFiles.length > 0 ? run(["diff", "--stat"]) : "(clean working tree)";
 
       // Scan for relevant files based on task keywords
       const keywords = task.toLowerCase().split(/\s+/);

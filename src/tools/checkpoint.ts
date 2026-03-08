@@ -84,11 +84,20 @@ ${dirty || "clean"}
 
         if (commitResult === "no uncommitted changes") {
           // Stage the checkpoint file too
-          run(`git add "${checkpointFile}"`);
-          const result = run(`${addCmd} && git commit -m "${commitMsg.replace(/"/g, '\\"')}" 2>&1`);
+          run(["add", checkpointFile]);
+
+          // Stage based on mode
+          if (addCmd === "git add -A") {
+            run(["add", "-A"]);
+          } else if (addCmd === "git add -u") {
+            run(["add", "-u"]);
+          }
+          // "true" (staged mode) — nothing extra to stage
+
+          const result = run(["commit", "-m", commitMsg]);
           if (result.includes("commit failed") || result.includes("nothing to commit")) {
             // Rollback: unstage if commit failed
-            run("git reset HEAD 2>/dev/null");
+            run(["reset", "HEAD"]);
             commitResult = `commit failed: ${result}`;
           } else {
             commitResult = result;
