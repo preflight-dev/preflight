@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
 import { findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
+import { execSync } from "child_process";
+import { readdirSync, statSync } from "fs";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
 import { existsSync, readFileSync } from "fs";
@@ -152,10 +154,38 @@ export function registerClarifyIntent(server: McpServer): void {
       let hasTestFailures = false;
 
       if (!area || area.includes("test") || area.includes("fix") || area.includes("ui") || area.includes("api")) {
-        const typeErrors = run("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
+        let typeErrors = "0";
+        try {
+          typeErrors = execSync("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'", {
+            cwd: PROJECT_DIR,
+            encoding: "utf-8",
+            timeout: 30000,
+            stdio: ["pipe", "pipe", "pipe"],
+          }).trim();
+        } catch { typeErrors = "0"; }
         hasTypeErrors = parseInt(typeErrors, 10) > 0;
 
-        const testFiles = run("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
+        // Find test files using fs instead of shell pipeline
+        let testFiles = "";
+        try {
+          const found: string[] = [];
+          const walkTests = (dir: string, depth: number) => {
+            if (depth > 4 || found.length >= 20) return;
+            try {
+              for (const entry of readdirSync(dir)) {
+                const full = join(dir, entry);
+                try {
+                  const st = statSync(full);
+                  if (st.isDirectory()) walkTests(full, depth + 1);
+                  else if (entry.endsWith(".spec.ts")) found.push(full);
+                } catch { /* skip inaccessible */ }
+              }
+            } catch { /* skip */ }
+          };
+          const testsDir = join(PROJECT_DIR, "tests");
+          if (existsSync(testsDir)) walkTests(testsDir, 0);
+          testFiles = found.join("\n");
+        } catch { testFiles = ""; }
         const failingTests = getTestFailures();
         hasTestFailures = failingTests !== "all passing" && failingTests !== "no test report found";
 
