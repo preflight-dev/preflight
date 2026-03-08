@@ -1,45 +1,37 @@
-# .preflight/triage.yml — Triage classification rules
-# Controls how preflight routes your prompts through the decision tree.
-#
-# The triage engine classifies every prompt into one of:
-#   TRIVIAL       → pass through (commit, lint, format)
-#   CLEAR         → well-scoped, no intervention needed
-#   AMBIGUOUS     → needs clarification before proceeding
-#   MULTI-STEP    → complex task, will be sequenced
-#   CROSS-SERVICE → touches multiple projects/services
+# .preflight/triage.yml
+# Controls how preflight classifies your prompts.
 
 rules:
   # Prompts containing these words are always flagged as at least AMBIGUOUS.
-  # Add domain terms that are frequently under-specified in your codebase.
+  # Add your core domain objects — the things that are dangerous to get wrong.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
     - billing
-    - onboarding
+    # - your-domain-keyword
 
   # Prompts containing these words pass through as TRIVIAL.
-  # These are safe, well-understood commands that don't need preflight.
+  # Safe, routine commands that don't need scrutiny.
   skip:
     - commit
     - format
     - lint
-    - prettier
-    - "git push"
+    - "git status"
+    - "run tests"
 
-  # Prompts containing these words trigger CROSS-SERVICE classification.
-  # Preflight will search related projects for relevant contracts.
+  # Prompts containing these words escalate to CROSS-SERVICE.
+  # These trigger contract search across related_projects.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - queue
-    - pub/sub
+    - shared
 
-# How aggressively to classify prompts.
-#   "relaxed"  — more prompts pass as clear (good for experienced users)
-#   "standard" — balanced (default)
-#   "strict"   — more prompts flagged as ambiguous (good for teams/onboarding)
+# How aggressively to classify:
+#   "relaxed"  — more prompts pass as clear
+#   "standard" — balanced (recommended)
+#   "strict"   — more prompts flagged as ambiguous
 strictness: standard

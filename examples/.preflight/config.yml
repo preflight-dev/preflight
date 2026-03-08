@@ -1,25 +1,25 @@
-# .preflight/config.yml — Example configuration
-# Copy this directory to your project root and customize.
-#
-# Every field is optional. Defaults are sensible for solo projects.
-# For teams, commit this to your repo so everyone shares the same triage rules.
+# .preflight/config.yml
+# Drop this file in your project root. Every field is optional.
 
-# Profile controls how much detail preflight adds to responses.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
+# Profile controls overall verbosity:
+#   "minimal"  — only flag ambiguous+, skip clarification detail
+#   "standard" — default behavior
 #   "full"     — maximum detail on every non-trivial prompt
 profile: standard
 
 # Related projects for cross-service contract awareness.
-# Preflight indexes these and surfaces relevant types/routes when your
-# prompt touches shared boundaries.
+# When your prompt mentions a keyword from a related project,
+# preflight searches that project's contracts and session history.
 related_projects:
-  - path: /Users/you/projects/api-gateway
-    alias: api-gateway
+  - path: /Users/you/projects/auth-service
+    alias: auth-service
   - path: /Users/you/projects/shared-types
     alias: shared-types
+  # Add more as needed:
+  # - path: /Users/you/projects/notifications
+  #   alias: notifications
 
-# Behavioral thresholds — tune these to your workflow.
+# Behavioral thresholds
 thresholds:
   # Warn if no session activity for this many minutes
   session_stale_minutes: 30
@@ -27,12 +27,12 @@ thresholds:
   # Suggest a checkpoint after this many tool calls
   max_tool_calls_before_checkpoint: 100
 
-  # Minimum corrections before preflight forms a "you keep doing this" pattern
+  # Minimum corrections before preflight detects a recurring pattern
   correction_pattern_threshold: 3
 
-# Embedding provider for semantic search across session history.
-#   "local"  — zero config, uses Xenova transformers (~50 events/sec, 384d)
-#   "openai" — faster + higher quality, requires OPENAI_API_KEY (~200 events/sec, 1536d)
+# Embedding provider for semantic search
+# "local" uses Xenova (no API key needed, runs on-device)
+# "openai" uses OpenAI embeddings (requires openai_api_key)
 embeddings:
   provider: local
   # openai_api_key: sk-...  # uncomment if using openai provider

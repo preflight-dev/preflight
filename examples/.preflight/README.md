@@ -1,43 +1,32 @@
-# `.preflight/` Config Directory
+# Example `.preflight/` Configuration
 
-Copy this directory to your project root to configure preflight for your team.
-
-```
-your-project/
-├── .preflight/
-│   ├── config.yml          # Main config (profile, thresholds, related projects)
-│   ├── triage.yml          # Triage rules (keywords, strictness)
-│   └── contracts/          # Manual contract definitions
-│       └── api.yml         # Example: shared API types and routes
-├── src/
-└── ...
-```
-
-## Getting Started
+Copy this entire `.preflight/` directory into your project root to get started.
 
 ```bash
-# From your project root:
-cp -r /path/to/preflight/examples/.preflight .preflight
-
-# Edit config.yml with your related project paths:
-vim .preflight/config.yml
-
-# Commit to share with your team:
-git add .preflight && git commit -m "add preflight config"
+cp -r examples/.preflight /path/to/your/project/
 ```
+
+Then edit the files to match your project:
 
 ## Files
 
-| File | Purpose | Required? |
-|------|---------|-----------|
-| `config.yml` | Profile, related projects, thresholds, embedding config | No (sensible defaults) |
-| `triage.yml` | Keyword rules and strictness for prompt classification | No (sensible defaults) |
-| `contracts/*.yml` | Manual type/route/interface definitions | No (auto-extracted from code) |
+| File | Purpose |
+|------|---------|
+| `config.yml` | Main configuration — profile, related projects, thresholds |
+| `triage.yml` | Controls how prompts are classified (trivial/ambiguous/cross-service) |
+| `contracts/api.yml` | Example manual contract definitions for cross-service awareness |
 
-All files are optional. Preflight works with zero config — these files let you tune it.
+## What to customize
 
-## Tips
+1. **`config.yml`** — Update `related_projects` paths to point at your actual sibling services
+2. **`triage.yml`** — Add domain-specific keywords to `always_check` (e.g., your core business objects) and `skip` (e.g., your safe routine commands)
+3. **`contracts/`** — Add YAML files for shared types/interfaces that span multiple services
 
-- **Start minimal.** Drop in just `config.yml` with your `related_projects`. Add triage rules later as you see which prompts get misclassified.
-- **Contracts are supplements.** Preflight auto-extracts types and routes from your code. Only add manual contracts for external services or planned interfaces.
-- **Commit `.preflight/`.** The whole point is team-shareable configuration.
+## Committing to your repo
+
+These files are designed to be committed — they help your whole team get consistent preflight behavior. Add them to version control:
+
+```bash
+git add .preflight/
+git commit -m "add preflight config"
+```

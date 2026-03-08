@@ -1,15 +1,11 @@
-# .preflight/contracts/api.yml — Manual contract definitions
-# These supplement auto-extracted contracts from your codebase.
-# Manual definitions win on name conflicts with auto-extracted ones.
-#
-# Use these when:
-#   - A contract lives in a service you don't have locally
-#   - Auto-extraction misses something important
-#   - You want to document planned/in-progress interfaces
+# .preflight/contracts/api.yml
+# Manual contract definitions that supplement auto-extraction.
+# Use these for shared types that span multiple services,
+# or for contracts that auto-extraction doesn't pick up.
 
 - name: User
   kind: interface
-  description: Core user record shared across services
+  description: Core user object shared across services
   fields:
     - name: id
       type: string
@@ -20,31 +16,34 @@
     - name: role
       type: "'admin' | 'member' | 'viewer'"
       required: true
-    - name: createdAt
-      type: Date
+    - name: organizationId
+      type: string
       required: true
 
-- name: CreateUserRequest
+- name: RewardsTier
   kind: interface
-  description: POST /api/users request body
+  description: Reward tier levels and their perks
   fields:
-    - name: email
-      type: string
+    - name: tier
+      type: "'free' | 'pro' | 'enterprise'"
       required: true
-    - name: role
-      type: "'admin' | 'member' | 'viewer'"
-      required: false
-    - name: inviteCode
-      type: string
+    - name: multiplier
+      type: number
+      required: true
+    - name: perks
+      type: string[]
       required: false
 
-- name: "POST /api/users"
-  kind: route
-  description: Creates a new user account
+- name: ApiResponse
+  kind: interface
+  description: Standard API response envelope
   fields:
-    - name: body
-      type: CreateUserRequest
+    - name: success
+      type: boolean
       required: true
-    - name: returns
-      type: "{ user: User, token: string }"
-      required: true
+    - name: data
+      type: T
+      required: false
+    - name: error
+      type: "{ code: string; message: string }"
+      required: false
