@@ -372,6 +372,8 @@ Preflight understands that microservices share contracts. When your prompt menti
 
 ### Setup
 
+> 💡 **Want a ready-to-use example?** Copy `examples/.preflight/` into your project root — it includes annotated `config.yml`, `triage.yml`, and sample contracts. See [`examples/.preflight/README.md`](examples/.preflight/README.md).
+
 **Option 1: `.preflight/config.yml`** (recommended — committed to repo)
 
 ```yaml
