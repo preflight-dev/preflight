@@ -564,6 +564,12 @@ flowchart TB
 
 ---
 
+## Troubleshooting
+
+Having issues? See **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for solutions to common problems — LanceDB setup, missing projects, config loading, and more.
+
+---
+
 ## Contributing
 
 This project is young and there's plenty to do. Check the [issues](https://github.com/TerminalGravity/preflight/issues) — several are tagged `good first issue`.
