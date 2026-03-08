@@ -17,11 +17,6 @@ const STOP_WORDS = new Set([
   "like", "some", "each", "only", "need", "want", "please", "update", "change",
 ]);
 
-/** Shell-escape a string for use inside single quotes */
-function shellEscape(s: string): string {
-  return s.replace(/'/g, "'\\''");
-}
-
 /** Safely parse git porcelain status lines */
 function parsePortelainFiles(porcelain: string): string[] {
   if (!porcelain.trim()) return [];
@@ -127,8 +122,13 @@ export function registerScopeWork(server: McpServer): void {
         .filter((k) => k.length > 2)
         .slice(0, 5);
       if (grepTerms.length > 0) {
-        const pattern = shellEscape(grepTerms.join("|"));
-        matchedFiles = run(`git ls-files | head -500 | grep -iE '${pattern}' | head -30`);
+        // Filter git-tracked files in JS instead of shell pipes
+        const allTracked = run(["ls-files"]);
+        if (!allTracked.startsWith("[")) {
+          const re = new RegExp(grepTerms.join("|"), "i");
+          matchedFiles = allTracked.split("\n").filter(Boolean).slice(0, 500)
+            .filter(f => re.test(f)).slice(0, 30).join("\n");
+        }
       }
 
       // Check which relevant dirs actually exist (with path traversal protection)

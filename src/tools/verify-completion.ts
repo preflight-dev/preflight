@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run, getStatus } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { execFileSync } from "child_process";
 import { join } from "path";
 
 /** Detect package manager from lockfiles */
@@ -34,9 +35,26 @@ function detectTestRunner(): string | null {
 /** Check if a build script exists in package.json */
 function hasBuildScript(): boolean {
   try {
-    const pkg = JSON.parse(run("cat package.json 2>/dev/null"));
+    const raw = readFileSync(join(PROJECT_DIR, "package.json"), "utf-8");
+    const pkg = JSON.parse(raw);
     return !!pkg?.scripts?.build;
   } catch { return false; }
+}
+
+/** Run a shell command string (for non-git commands that need pipes/shell features) */
+function shellRun(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execFileSync("sh", ["-c", cmd], {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    if (e.killed) return `[timed out]`;
+    return e.stdout?.trim() || e.stderr?.trim() || `[command failed: ${cmd}]`;
+  }
 }
 
 export function registerVerifyCompletion(server: McpServer): void {
@@ -55,7 +73,7 @@ export function registerVerifyCompletion(server: McpServer): void {
       const checks: { name: string; passed: boolean; detail: string }[] = [];
 
       // 1. Type check (single invocation, extract both result and count)
-      const tscOutput = run(`${pm === "npx" ? "npx" : pm} tsc --noEmit 2>&1 | tail -20`);
+      const tscOutput = shellRun(`${pm === "npx" ? "npx" : pm} tsc --noEmit 2>&1 | tail -20`);
       const errorLines = tscOutput.split("\n").filter(l => /error TS\d+/.test(l));
       const typePassed = errorLines.length === 0;
       checks.push({
@@ -80,7 +98,7 @@ export function registerVerifyCompletion(server: McpServer): void {
       // 3. Tests
       if (!skip_tests) {
         const runner = detectTestRunner();
-        const changedFiles = run("git diff --name-only HEAD~1 2>/dev/null").split("\n").filter(Boolean);
+        const changedFiles = run(["diff", "--name-only", "HEAD~1"]).split("\n").filter(Boolean);
         let testCmd = "";
 
         if (runner === "playwright") {
@@ -88,7 +106,7 @@ export function registerVerifyCompletion(server: McpServer): void {
           if (test_scope && test_scope !== "all") {
             testCmd = test_scope.endsWith(".spec.ts") || test_scope.endsWith(".test.ts")
               ? `${runnerCmd} ${test_scope} --reporter=line 2>&1 | tail -20`
-              : `${runnerCmd} --grep "${test_scope}" --reporter=line 2>&1 | tail -20`;
+              : `${runnerCmd} --grep '${test_scope}' --reporter=line 2>&1 | tail -20`;
           } else {
             // Auto-detect from changed files
             const changedTests = changedFiles.filter(f => /\.(spec|test)\.(ts|tsx|js)$/.test(f)).slice(0, 5);
@@ -112,7 +130,7 @@ export function registerVerifyCompletion(server: McpServer): void {
         }
 
         if (testCmd) {
-          const testResult = run(testCmd, { timeout: 120000 });
+          const testResult = shellRun(testCmd, { timeout: 120000 });
           const testPassed = /pass/i.test(testResult) && !/fail/i.test(testResult);
           checks.push({
             name: "Tests",
@@ -130,7 +148,7 @@ export function registerVerifyCompletion(server: McpServer): void {
 
       // 4. Build check (only if build script exists and not skipped)
       if (!skip_build && hasBuildScript()) {
-        const buildCheck = run(`${pm === "npx" ? "npm run" : pm} build 2>&1 | tail -10`, { timeout: 60000 });
+        const buildCheck = shellRun(`${pm === "npx" ? "npm run" : pm} build 2>&1 | tail -10`, { timeout: 60000 });
         const buildPassed = !/\b[Ee]rror\b/.test(buildCheck) || /Successfully compiled/.test(buildCheck);
         checks.push({
           name: "Build",
