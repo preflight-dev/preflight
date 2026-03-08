@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getDiffFiles } from "../lib/git.js";
+import { run, shellRun, getDiffFiles } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { getConfig, type RelatedProject } from "../lib/config.js";
 import { existsSync, readFileSync } from "fs";
@@ -29,11 +29,11 @@ function findAreaFiles(area: string): string {
 
   // If area looks like a path, search directly
   if (area.includes("/")) {
-    return run(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
+    return shellRun(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
   }
 
   // Search for area keyword in git-tracked file paths
-  const files = run(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
+  const files = shellRun(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
   if (files && !files.startsWith("[command failed")) return files;
 
   // Fallback to recently changed files
@@ -42,18 +42,21 @@ function findAreaFiles(area: string): string {
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  if (!area) return shellRun("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
 
   const safeArea = shellEscape(area.split(/\s+/)[0]);
-  const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const tests = shellRun(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
+  return tests || shellRun("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
 }
 
 /** Get an example pattern from the first matching file */
 function getExamplePattern(files: string): string {
   const firstFile = files.split("\n").filter(Boolean)[0];
   if (!firstFile) return "no pattern available";
-  return run(`head -30 '${shellEscape(firstFile)}' 2>/dev/null || echo 'could not read file'`);
+  try {
+    const content = readFileSync(join(PROJECT_DIR, firstFile), "utf-8");
+    return content.split("\n").slice(0, 30).join("\n");
+  } catch { return "could not read file"; }
 }
 
 // ---------------------------------------------------------------------------

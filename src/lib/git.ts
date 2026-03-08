@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -33,6 +33,29 @@ export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {
 /** Convenience: run a raw command string (split on spaces). Only for simple, known-safe commands. */
 function gitCmd(cmdStr: string, opts?: { timeout?: number }): string {
   return run(cmdStr.split(/\s+/), opts);
+}
+
+/**
+ * Run a shell command (not git-specific). Use for commands that need shell
+ * features like pipes, redirects, or non-git executables (tsc, npm, find, etc.).
+ * Returns stdout on success, descriptive error string on failure.
+ */
+export function shellRun(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    const timedOut = e.killed === true || e.signal === "SIGTERM";
+    if (timedOut) return `[timed out after ${opts.timeout || 10000}ms]`;
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
 }
 
 /** Get the current branch name. */
