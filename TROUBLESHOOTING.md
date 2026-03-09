@@ -149,6 +149,23 @@ Profiles: `strict` (most checks), `standard` (default), `minimal` (lightweight).
 
 ---
 
+## Init wizard launches instead of MCP server
+
+**Symptom:** Running `preflight-dev` via `claude mcp add` opens the interactive setup wizard instead of starting the MCP server.
+
+**Cause:** Older versions of the bin entry always ran the init wizard regardless of context.
+
+**Fix:** Update to the latest version and use `serve` to force server mode:
+
+```bash
+npm install -g preflight-dev@latest
+claude mcp add preflight -- preflight-dev serve
+```
+
+The binary auto-detects TTY vs piped stdin, but `serve` makes it explicit. You can also force the wizard with `preflight-dev init`.
+
+---
+
 ## Still stuck?
 
 - Check [GitHub Issues](https://github.com/TerminalGravity/preflight/issues) for known bugs

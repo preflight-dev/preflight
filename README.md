@@ -119,8 +119,10 @@ Restart Claude Code. The tools activate automatically.
 
 ```bash
 npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
+claude mcp add preflight -- preflight-dev serve
 ```
+
+> **Tip:** Running `preflight-dev` in a terminal (TTY) launches the interactive setup wizard. When piped (like `claude mcp add`), it auto-detects and starts the MCP server. You can also force either mode with `preflight-dev init` or `preflight-dev serve`.
 
 ---
 
