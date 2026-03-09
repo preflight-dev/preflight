@@ -1,0 +1,32 @@
+# .preflight/config.yml — Drop this in your project root
+#
+# Every field is optional. Defaults are sensible — only override what you need.
+# This file should be committed to your repo so the whole team shares settings.
+
+# Profile controls how much detail preflight returns.
+#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
+#   "standard" — default, balanced output
+#   "full"     — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service contract awareness.
+# Preflight will search these projects' LanceDB indexes and contract registries
+# when your prompt touches cross-service boundaries.
+related_projects:
+  - path: /Users/you/projects/auth-service
+    alias: auth
+  - path: /Users/you/projects/shared-types
+    alias: shared-types
+  # - path: /Users/you/projects/notifications
+  #   alias: notifications
+
+# Behavioral thresholds — tune these to your workflow
+thresholds:
+  session_stale_minutes: 30           # Warn if no activity for this long
+  max_tool_calls_before_checkpoint: 100  # Suggest checkpoint after N tool calls
+  correction_pattern_threshold: 3     # Min corrections before flagging a pattern
+
+# Embedding provider for semantic search over session history
+embeddings:
+  provider: local                     # "local" (Xenova, no API key) or "openai"
+  # openai_api_key: sk-...           # Only needed if provider is "openai"

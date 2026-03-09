@@ -1,0 +1,38 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+#
+# These supplement auto-extracted contracts from your codebase.
+# Useful for documenting APIs that aren't easily inferred from code,
+# or for pinning contracts that shouldn't drift without review.
+#
+# Manual definitions win over auto-extracted ones on name conflicts.
+
+- name: User
+  kind: interface
+  description: Core user record shared across services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: RewardsTier
+  kind: interface
+  description: Reward tier levels and their perks
+  fields:
+    - name: tier
+      type: "'bronze' | 'silver' | 'gold'"
+      required: true
+    - name: multiplier
+      type: number
+      required: true
+    - name: perks
+      type: string[]
+      required: false
