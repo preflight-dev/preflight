@@ -90,7 +90,8 @@ export function registerSequenceTasks(server: McpServer): void {
       // For locality: infer directories from path-like tokens in task text
       if (strategy === "locality") {
         // Use git ls-files with a depth limit instead of find for performance
-        const gitFiles = run("git ls-files 2>/dev/null | head -1000");
+        const gitFilesRaw = run(["ls-files"]);
+        const gitFiles = gitFilesRaw.split("\n").slice(0, 1000).join("\n");
         const knownDirs = new Set<string>();
         for (const f of gitFiles.split("\n").filter(Boolean)) {
           const parts = f.split("/");
