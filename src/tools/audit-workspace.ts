@@ -1,6 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
-import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
 
 /** Extract top-level work areas from file paths generically */
 function detectWorkAreas(files: string[]): Set<string> {
@@ -36,7 +38,8 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      const rawDiff = run(["diff", "--name-only", "HEAD~10"]);
+      const recentFiles = rawDiff.startsWith("[") ? [] : rawDiff.split("\n").filter(Boolean);
       const sections: string[] = [];
 
       // Doc freshness
@@ -75,7 +78,16 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(run("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        const testFilesCount = (() => {
+          try {
+            const testDir = join(PROJECT_DIR, "tests");
+            const st = statSync(testDir);
+            if (!st.isDirectory()) return 0;
+            // Count test files using git ls-files for accuracy
+            const files = run(["ls-files", "tests/"]);
+            return files.split("\n").filter(f => /\.(spec|test)\.(ts|js)$/.test(f)).length;
+          } catch { return 0; }
+        })();
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;

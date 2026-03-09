@@ -128,7 +128,11 @@ export function registerScopeWork(server: McpServer): void {
         .slice(0, 5);
       if (grepTerms.length > 0) {
         const pattern = shellEscape(grepTerms.join("|"));
-        matchedFiles = run(`git ls-files | head -500 | grep -iE '${pattern}' | head -30`);
+        const allFiles = run(["ls-files"]);
+        matchedFiles = allFiles.split("\n")
+          .filter(f => new RegExp(grepTerms.join("|"), "i").test(f))
+          .slice(0, 30)
+          .join("\n");
       }
 
       // Check which relevant dirs actually exist (with path traversal protection)
