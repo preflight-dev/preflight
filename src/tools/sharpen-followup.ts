@@ -27,10 +27,10 @@ function parsePortelainFiles(output: string): string[] {
 /** Get recently changed files, safe for first commit / shallow clones */
 function getRecentChangedFiles(): string[] {
   // Try HEAD~1..HEAD, fall back to just staged, then unstaged
-  const commands = [
-    "git diff --name-only HEAD~1 HEAD 2>/dev/null",
-    "git diff --name-only --cached 2>/dev/null",
-    "git diff --name-only 2>/dev/null",
+  const commands: string[][] = [
+    ["diff", "--name-only", "HEAD~1", "HEAD"],
+    ["diff", "--name-only", "--cached"],
+    ["diff", "--name-only"],
   ];
   const results = new Set<string>();
   for (const cmd of commands) {
@@ -87,7 +87,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       // Gather context to resolve ambiguity
       const contextFiles: string[] = [...(previous_files ?? [])];
       const recentChanged = getRecentChangedFiles();
-      const porcelainOutput = run("git status --porcelain 2>/dev/null");
+      const porcelainOutput = run(["status", "--porcelain"]);
       const untrackedOrModified = parsePortelainFiles(porcelainOutput);
 
       const allKnownFiles = [...new Set([...contextFiles, ...recentChanged, ...untrackedOrModified])].filter(Boolean);

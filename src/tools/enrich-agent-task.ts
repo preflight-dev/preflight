@@ -21,39 +21,52 @@ function detectPackageManager(): string {
   return "npm";
 }
 
+/** Get all git-tracked files (cached for multiple calls) */
+function getGitFiles(): string[] {
+  return run(["ls-files"]).split("\n").filter(Boolean);
+}
+
+const TEST_RE = /\.(spec|test)\.(ts|tsx|js|jsx)$/;
+
 /** Find files in a target area using git-tracked files (project-agnostic) */
 function findAreaFiles(area: string): string {
   if (!area) return getDiffFiles("HEAD~3");
 
-  const safeArea = shellEscape(area);
+  const allFiles = getGitFiles();
 
-  // If area looks like a path, search directly
+  // If area looks like a path, search by prefix
   if (area.includes("/")) {
-    return run(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
+    const safeArea = shellEscape(area);
+    return allFiles.filter(f => f.startsWith(safeArea)).slice(0, 20).join("\n") || getDiffFiles("HEAD~3");
   }
 
-  // Search for area keyword in git-tracked file paths
-  const files = run(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
-  if (files && !files.startsWith("[command failed")) return files;
-
-  // Fallback to recently changed files
-  return getDiffFiles("HEAD~3");
+  // Search for area keyword in file paths
+  const pattern = new RegExp(shellEscape(area), "i");
+  const matched = allFiles.filter(f => pattern.test(f)).slice(0, 20).join("\n");
+  return matched || getDiffFiles("HEAD~3");
 }
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const allFiles = getGitFiles();
+  const testFiles = allFiles.filter(f => TEST_RE.test(f));
+
+  if (!area) return testFiles.slice(0, 10).join("\n");
 
   const safeArea = shellEscape(area.split(/\s+/)[0]);
-  const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const pattern = new RegExp(safeArea, "i");
+  const matched = testFiles.filter(f => pattern.test(f)).slice(0, 10).join("\n");
+  return matched || testFiles.slice(0, 10).join("\n");
 }
 
 /** Get an example pattern from the first matching file */
 function getExamplePattern(files: string): string {
   const firstFile = files.split("\n").filter(Boolean)[0];
   if (!firstFile) return "no pattern available";
-  return run(`head -30 '${shellEscape(firstFile)}' 2>/dev/null || echo 'could not read file'`);
+  try {
+    const content = readFileSync(join(PROJECT_DIR, firstFile), "utf-8");
+    return content.split("\n").slice(0, 30).join("\n");
+  } catch { return "could not read file"; }
 }
 
 // ---------------------------------------------------------------------------
