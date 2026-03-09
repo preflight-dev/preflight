@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { existsSync, readFileSync } from "fs";
 import { execFileSync } from "child_process";
 import { join } from "path";
-import { run, getBranch, getRecentCommits, getStatus } from "../lib/git.js";
+import { getBranch, getRecentCommits, getStatus } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
 import { STATE_DIR, now } from "../lib/state.js";
 

@@ -4,8 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
 import { now } from "../lib/state.js";
 import { PROJECT_DIR } from "../lib/files.js";
-import { existsSync } from "fs";
-import { join, resolve } from "path";
+import { resolve } from "path";
 
 type Cat = "schema" | "config" | "api" | "ui" | "test" | "other";
 

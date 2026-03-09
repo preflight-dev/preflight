@@ -97,8 +97,6 @@ export function registerVerifyCompletion(server: McpServer): void {
       if (!skip_tests) {
         const runner = detectTestRunner();
         const changedFiles = run(["diff", "--name-only", "HEAD~1"]).split("\n").filter(Boolean);
-        let testCmd = "";
-
         // Build test command args (run via execCmd, not git run)
         let testBin = "";
         let testArgs: string[] = [];
