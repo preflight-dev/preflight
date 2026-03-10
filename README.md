@@ -500,6 +500,8 @@ Manual contract definitions that supplement auto-extraction:
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
 
+> **💡 Ready-to-use example configs:** Copy [`examples/.preflight/`](examples/.preflight/) into your project root to get started quickly. See [`examples/.preflight/README.md`](examples/.preflight/README.md) for details.
+
 ---
 
 ## Embedding Providers

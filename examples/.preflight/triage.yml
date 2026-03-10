@@ -1,0 +1,36 @@
+# .preflight/triage.yml
+# Controls the triage classification engine.
+# Customize which prompts get flagged, skipped, or escalated.
+
+rules:
+  # Prompts containing these words → always at least AMBIGUOUS.
+  # Add domain terms that are frequently underspecified in your codebase.
+  always_check:
+    - rewards
+    - permissions
+    - migration
+    - schema
+    - billing
+
+  # Prompts containing these words → TRIVIAL (pass through without checks).
+  # Safe, low-risk operations that don't need guardrails.
+  skip:
+    - commit
+    - format
+    - lint
+    - prettier
+
+  # Prompts containing these words → CROSS-SERVICE.
+  # Triggers a search across related_projects defined in config.yml.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    - queue
+
+# How aggressively to classify prompts.
+# "relaxed"  — more prompts pass as clear (experienced users)
+# "standard" — balanced (recommended)
+# "strict"   — more prompts flagged as ambiguous (teams, onboarding)
+strictness: standard

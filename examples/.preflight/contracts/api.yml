@@ -1,0 +1,35 @@
+# .preflight/contracts/api.yml
+# Manual contract definitions that supplement auto-extraction.
+# Use these when preflight can't auto-detect your shared types,
+# or when you want to be explicit about cross-service boundaries.
+
+- name: User
+  kind: interface
+  description: Core user object shared across services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: teamId
+      type: string
+      required: false
+
+- name: ApiResponse
+  kind: interface
+  description: Standard API response wrapper
+  fields:
+    - name: data
+      type: T
+      required: true
+    - name: error
+      type: string
+      required: false
+    - name: meta
+      type: "{ page: number, total: number }"
+      required: false
