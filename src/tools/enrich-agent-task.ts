@@ -29,12 +29,16 @@ function findAreaFiles(area: string): string {
 
   // If area looks like a path, search directly
   if (area.includes("/")) {
-    return run(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
+    const result = run(["ls-files", "--", `${safeArea}*`]);
+    if (!result.startsWith("[")) return result.split("\n").slice(0, 20).join("\n");
   }
 
   // Search for area keyword in git-tracked file paths
-  const files = run(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
-  if (files && !files.startsWith("[command failed")) return files;
+  const allFiles = run(["ls-files"]);
+  if (allFiles.startsWith("[")) return getDiffFiles("HEAD~3");
+  const re = new RegExp(safeArea, "i");
+  const matched = allFiles.split("\n").filter(f => re.test(f)).slice(0, 20).join("\n");
+  if (matched) return matched;
 
   // Fallback to recently changed files
   return getDiffFiles("HEAD~3");
@@ -42,18 +46,30 @@ function findAreaFiles(area: string): string {
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const allFiles = run(["ls-files"]);
+  if (allFiles.startsWith("[")) return "";
+  const testFiles = allFiles.split("\n").filter(f => /\.(spec|test)\.(ts|tsx|js|jsx)$/.test(f));
 
-  const safeArea = shellEscape(area.split(/\s+/)[0]);
-  const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  if (area) {
+    const safeArea = shellEscape(area.split(/\s+/)[0]);
+    const re = new RegExp(safeArea, "i");
+    const matched = testFiles.filter(f => re.test(f)).slice(0, 10).join("\n");
+    if (matched) return matched;
+  }
+
+  return testFiles.slice(0, 10).join("\n");
 }
 
 /** Get an example pattern from the first matching file */
 function getExamplePattern(files: string): string {
   const firstFile = files.split("\n").filter(Boolean)[0];
   if (!firstFile) return "no pattern available";
-  return run(`head -30 '${shellEscape(firstFile)}' 2>/dev/null || echo 'could not read file'`);
+  const filePath = join(PROJECT_DIR, firstFile);
+  try {
+    if (!existsSync(filePath)) return "could not read file";
+    const content = readFileSync(filePath, "utf-8");
+    return content.split("\n").slice(0, 30).join("\n");
+  } catch { return "could not read file"; }
 }
 
 // ---------------------------------------------------------------------------
