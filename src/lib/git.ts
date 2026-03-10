@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -86,4 +86,28 @@ export function getDiffStat(ref = "HEAD~5"): string {
   const fallback = run(["diff", "HEAD~3", "--stat"]);
   if (!fallback.startsWith("[")) return fallback;
   return "no diff stats available";
+}
+
+/**
+ * Run an arbitrary shell command string in PROJECT_DIR.
+ * Use this when you need pipes, redirects, or non-git commands.
+ * Only for internally-constructed commands — never pass user input directly.
+ */
+export function shell(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    if (e.killed === true || e.signal === "SIGTERM") {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
 }
