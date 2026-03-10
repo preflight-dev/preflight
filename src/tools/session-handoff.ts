@@ -1,15 +1,27 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { existsSync, readFileSync } from "fs";
+import { execSync } from "child_process";
 import { join } from "path";
 import { run, getBranch, getRecentCommits, getStatus } from "../lib/git.js";
-import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { STATE_DIR, now } from "../lib/state.js";
+
+/** Run a shell command, returning stdout or empty string on failure. */
+function shell(cmd: string): string {
+  try {
+    return execSync(cmd, { cwd: PROJECT_DIR, encoding: "utf-8", timeout: 15000, stdio: ["pipe", "pipe", "pipe"] }).trim();
+  } catch (e: any) {
+    return e.stdout?.trim?.() || "";
+  }
+}
 
 /** Check if a CLI tool is available */
 function hasCommand(cmd: string): boolean {
-  const result = run(`command -v ${cmd} 2>/dev/null`);
-  return !!result && !result.startsWith("[command failed");
+  try {
+    execSync(`command -v ${cmd}`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+    return true;
+  } catch { return false; }
 }
 
 export function registerSessionHandoff(server: McpServer): void {
@@ -44,7 +56,7 @@ export function registerSessionHandoff(server: McpServer): void {
 
         // Only try gh if it exists
         if (hasCommand("gh")) {
-          const openPRs = run("gh pr list --state open --json number,title,headRefName 2>/dev/null || echo '[]'");
+          const openPRs = shell("gh pr list --state open --json number,title,headRefName") || "[]";
           if (openPRs && openPRs !== "[]") {
             sections.push(`## Open PRs\n\`\`\`json\n${openPRs}\n\`\`\``);
           }

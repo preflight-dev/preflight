@@ -1,6 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
-import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
+import { readdirSync, existsSync } from "fs";
+import { join } from "path";
 
 /** Extract top-level work areas from file paths generically */
 function detectWorkAreas(files: string[]): Set<string> {
@@ -36,7 +38,8 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      const recentFilesRaw = run(["diff", "--name-only", "HEAD~10"]);
+      const recentFiles = recentFilesRaw.startsWith("[") ? [] : recentFilesRaw.split("\n").filter(Boolean);
       const sections: string[] = [];
 
       // Doc freshness
@@ -75,7 +78,21 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(run("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        let testFilesCount = 0;
+        const testsDir = join(PROJECT_DIR, "tests");
+        if (existsSync(testsDir)) {
+          try {
+            const walkTests = (dir: string): number => {
+              let count = 0;
+              for (const entry of readdirSync(dir, { withFileTypes: true })) {
+                if (entry.isDirectory()) count += walkTests(join(dir, entry.name));
+                else if (/\.(spec|test)\.(ts|js)$/.test(entry.name)) count++;
+              }
+              return count;
+            };
+            testFilesCount = walkTests(testsDir);
+          } catch { /* ignore */ }
+        }
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;
