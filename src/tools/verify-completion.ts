@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run, getStatus } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { execFileSync } from "child_process";
 import { join } from "path";
 
 /** Detect package manager from lockfiles */
@@ -34,7 +35,8 @@ function detectTestRunner(): string | null {
 /** Check if a build script exists in package.json */
 function hasBuildScript(): boolean {
   try {
-    const pkg = JSON.parse(run("cat package.json 2>/dev/null"));
+    const raw = readFileSync(join(PROJECT_DIR, "package.json"), "utf-8");
+    const pkg = JSON.parse(raw);
     return !!pkg?.scripts?.build;
   } catch { return false; }
 }
@@ -55,7 +57,21 @@ export function registerVerifyCompletion(server: McpServer): void {
       const checks: { name: string; passed: boolean; detail: string }[] = [];
 
       // 1. Type check (single invocation, extract both result and count)
-      const tscOutput = run(`${pm === "npx" ? "npx" : pm} tsc --noEmit 2>&1 | tail -20`);
+      let tscOutput = "";
+      try {
+        const tscCmd = pm === "npx" ? "npx" : pm;
+        const tscArgs = pm === "npx" ? ["tsc", "--noEmit"] : ["exec", "tsc", "--noEmit"];
+        tscOutput = execFileSync(tscCmd, tscArgs, {
+          cwd: PROJECT_DIR, encoding: "utf-8", timeout: 30000,
+          stdio: ["pipe", "pipe", "pipe"],
+        }).trim();
+      } catch (e: any) {
+        // tsc exits non-zero on type errors — capture stdout/stderr
+        tscOutput = (e.stdout || "").trim() || (e.stderr || "").trim();
+      }
+      // Keep only the last 20 lines
+      const tscLines = tscOutput.split("\n");
+      if (tscLines.length > 20) tscOutput = tscLines.slice(-20).join("\n");
       const errorLines = tscOutput.split("\n").filter(l => /error TS\d+/.test(l));
       const typePassed = errorLines.length === 0;
       checks.push({
@@ -80,39 +96,65 @@ export function registerVerifyCompletion(server: McpServer): void {
       // 3. Tests
       if (!skip_tests) {
         const runner = detectTestRunner();
-        const changedFiles = run("git diff --name-only HEAD~1 2>/dev/null").split("\n").filter(Boolean);
+        const changedFiles = run(["diff", "--name-only", "HEAD~1"]).split("\n").filter(Boolean);
         let testCmd = "";
 
+        /** Run a command and return its output (last 20 lines), handling errors gracefully */
+        function runCmd(cmd: string, args: string[], timeout = 120000): string {
+          try {
+            const out = execFileSync(cmd, args, {
+              cwd: PROJECT_DIR, encoding: "utf-8", timeout,
+              stdio: ["pipe", "pipe", "pipe"],
+              maxBuffer: 1024 * 1024,
+            }).trim();
+            const lines = out.split("\n");
+            return lines.length > 20 ? lines.slice(-20).join("\n") : out;
+          } catch (e: any) {
+            const out = (e.stdout || "").trim() || (e.stderr || "").trim();
+            if (!out) return `[command failed: ${cmd} ${args.join(" ")}]`;
+            const lines = out.split("\n");
+            return lines.length > 20 ? lines.slice(-20).join("\n") : out;
+          }
+        }
+
+        let testResult = "";
+        let ranTests = false;
+
         if (runner === "playwright") {
-          const runnerCmd = `${pm === "npx" ? "npx" : `${pm} exec`} playwright test`;
+          const base = pm === "npx" ? "npx" : pm;
+          const prefix = pm === "npx" ? [] : ["exec"];
           if (test_scope && test_scope !== "all") {
-            testCmd = test_scope.endsWith(".spec.ts") || test_scope.endsWith(".test.ts")
-              ? `${runnerCmd} ${test_scope} --reporter=line 2>&1 | tail -20`
-              : `${runnerCmd} --grep "${test_scope}" --reporter=line 2>&1 | tail -20`;
+            const args = test_scope.endsWith(".spec.ts") || test_scope.endsWith(".test.ts")
+              ? [...prefix, "playwright", "test", test_scope, "--reporter=line"]
+              : [...prefix, "playwright", "test", "--grep", test_scope, "--reporter=line"];
+            testResult = runCmd(base, args);
+            ranTests = true;
           } else {
-            // Auto-detect from changed files
             const changedTests = changedFiles.filter(f => /\.(spec|test)\.(ts|tsx|js)$/.test(f)).slice(0, 5);
             if (changedTests.length > 0) {
-              testCmd = `${runnerCmd} ${changedTests.join(" ")} --reporter=line 2>&1 | tail -20`;
+              testResult = runCmd(base, [...prefix, "playwright", "test", ...changedTests, "--reporter=line"]);
+              ranTests = true;
             }
           }
         } else if (runner === "vitest" || runner === "jest") {
-          const runnerCmd = `${pm === "npx" ? "npx" : `${pm} exec`} ${runner}`;
+          const base = pm === "npx" ? "npx" : pm;
+          const prefix = pm === "npx" ? [] : ["exec"];
           if (test_scope && test_scope !== "all") {
-            testCmd = `${runnerCmd} --run ${test_scope} 2>&1 | tail -20`;
+            testResult = runCmd(base, [...prefix, runner, "--run", test_scope]);
+            ranTests = true;
           } else {
             const changedTests = changedFiles.filter(f => /\.(spec|test)\.(ts|tsx|js)$/.test(f)).slice(0, 5);
             if (changedTests.length > 0) {
-              testCmd = `${runnerCmd} --run ${changedTests.join(" ")} 2>&1 | tail -20`;
+              testResult = runCmd(base, [...prefix, runner, "--run", ...changedTests]);
+              ranTests = true;
             }
           }
         } else if (test_scope) {
-          // No recognized runner but scope given — try npm test
-          testCmd = `${pm} test 2>&1 | tail -20`;
+          testResult = runCmd(pm, ["test"]);
+          ranTests = true;
         }
 
-        if (testCmd) {
-          const testResult = run(testCmd, { timeout: 120000 });
+        if (ranTests) {
           const testPassed = /pass/i.test(testResult) && !/fail/i.test(testResult);
           checks.push({
             name: "Tests",
@@ -130,7 +172,19 @@ export function registerVerifyCompletion(server: McpServer): void {
 
       // 4. Build check (only if build script exists and not skipped)
       if (!skip_build && hasBuildScript()) {
-        const buildCheck = run(`${pm === "npx" ? "npm run" : pm} build 2>&1 | tail -10`, { timeout: 60000 });
+        const buildCmd = pm === "npx" ? "npm" : pm;
+        const buildArgs = pm === "npx" ? ["run", "build"] : ["build"];
+        let buildCheck = "";
+        try {
+          buildCheck = execFileSync(buildCmd, buildArgs, {
+            cwd: PROJECT_DIR, encoding: "utf-8", timeout: 60000,
+            stdio: ["pipe", "pipe", "pipe"], maxBuffer: 1024 * 1024,
+          }).trim();
+        } catch (e: any) {
+          buildCheck = (e.stdout || "").trim() || (e.stderr || "").trim() || "[build failed]";
+        }
+        const buildLines = buildCheck.split("\n");
+        if (buildLines.length > 10) buildCheck = buildLines.slice(-10).join("\n");
         const buildPassed = !/\b[Ee]rror\b/.test(buildCheck) || /Successfully compiled/.test(buildCheck);
         checks.push({
           name: "Build",
