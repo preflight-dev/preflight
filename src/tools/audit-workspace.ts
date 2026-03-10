@@ -1,6 +1,21 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, shell } from "../lib/git.js";
+import { readdirSync, existsSync } from "fs";
+import { join } from "path";
+import { run } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { PROJECT_DIR } from "../lib/files.js";
+
+/** Count files matching test patterns recursively */
+function countTestFiles(dir: string): number {
+  if (!existsSync(dir)) return 0;
+  let count = 0;
+  try {
+    for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+      if (entry.isFile() && /\.(spec|test)\.ts$/.test(entry.name)) count++;
+    }
+  } catch { /* ignore permission errors */ }
+  return count;
+}
 
 /** Extract top-level work areas from file paths generically */
 function detectWorkAreas(files: string[]): Set<string> {
@@ -75,7 +90,7 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(shell("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        const testFilesCount = countTestFiles(join(PROJECT_DIR, "tests"));
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;
