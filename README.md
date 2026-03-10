@@ -12,7 +12,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
+[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Usage Examples](examples/USAGE-EXAMPLES.md) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
 </div>
 
@@ -372,6 +372,8 @@ Preflight understands that microservices share contracts. When your prompt menti
 
 ### Setup
 
+> 💡 **Want a ready-to-use example?** Copy `examples/.preflight/` into your project root — it includes annotated `config.yml`, `triage.yml`, and sample contracts. See [`examples/.preflight/README.md`](examples/.preflight/README.md).
+
 **Option 1: `.preflight/config.yml`** (recommended — committed to repo)
 
 ```yaml
@@ -559,6 +561,12 @@ flowchart TB
     └── f6e5d4c3b2a1/
         └── ...                           # Another project
 ```
+
+---
+
+## Troubleshooting
+
+Having issues? See **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for solutions to common problems — LanceDB setup, missing projects, config loading, and more.
 
 ---
 

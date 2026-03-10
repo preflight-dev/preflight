@@ -1,0 +1,50 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+# These supplement auto-extracted contracts from your codebase.
+# Manual definitions win on name conflicts with auto-extracted ones.
+#
+# Use these when:
+#   - A contract lives in a service you don't have locally
+#   - Auto-extraction misses something important
+#   - You want to document planned/in-progress interfaces
+
+- name: User
+  kind: interface
+  description: Core user record shared across services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: CreateUserRequest
+  kind: interface
+  description: POST /api/users request body
+  fields:
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: false
+    - name: inviteCode
+      type: string
+      required: false
+
+- name: "POST /api/users"
+  kind: route
+  description: Creates a new user account
+  fields:
+    - name: body
+      type: CreateUserRequest
+      required: true
+    - name: returns
+      type: "{ user: User, token: string }"
+      required: true
