@@ -8,11 +8,6 @@ import { execFileSync } from "child_process";
 import { join, basename } from "path";
 import { createHash } from "crypto";
 
-/** Sanitize user input for safe use in shell commands */
-function shellEscape(s: string): string {
-  return s.replace(/[^a-zA-Z0-9_\-./]/g, "");
-}
-
 /** Detect package manager from lockfiles */
 function detectPackageManager(): string {
   if (existsSync(join(PROJECT_DIR, "pnpm-lock.yaml"))) return "pnpm";
@@ -21,39 +16,59 @@ function detectPackageManager(): string {
   return "npm";
 }
 
+/** Get all git-tracked files (cached to avoid repeated calls) */
+function getTrackedFiles(): string[] {
+  const result = run(["ls-files"]);
+  if (result.startsWith("[")) return [];
+  return result.split("\n").filter(Boolean);
+}
+
+const TEST_FILE_RE = /\.(spec|test)\.(ts|tsx|js|jsx)$/;
+
 /** Find files in a target area using git-tracked files (project-agnostic) */
 function findAreaFiles(area: string): string {
   if (!area) return getDiffFiles("HEAD~3");
 
-  const safeArea = shellEscape(area);
-
-  // If area looks like a path, search directly
+  // If area looks like a path, use git ls-files with pathspec
   if (area.includes("/")) {
-    return run(`git ls-files -- '${safeArea}*' 2>/dev/null | head -20`);
+    const result = run(["ls-files", "--", `${area}*`]);
+    const matched = result.startsWith("[") ? [] : result.split("\n").filter(Boolean).slice(0, 20);
+    return matched.join("\n") || getDiffFiles("HEAD~3");
   }
 
   // Search for area keyword in git-tracked file paths
-  const files = run(`git ls-files 2>/dev/null | grep -i '${safeArea}' | head -20`);
-  if (files && !files.startsWith("[command failed")) return files;
+  const areaLower = area.toLowerCase();
+  const matched = getTrackedFiles()
+    .filter(f => f.toLowerCase().includes(areaLower))
+    .slice(0, 20);
 
-  // Fallback to recently changed files
-  return getDiffFiles("HEAD~3");
+  return matched.length > 0 ? matched.join("\n") : getDiffFiles("HEAD~3");
 }
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  const allFiles = getTrackedFiles();
+  const testFiles = allFiles.filter(f => TEST_FILE_RE.test(f));
 
-  const safeArea = shellEscape(area.split(/\s+/)[0]);
-  const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  if (!area) return testFiles.slice(0, 10).join("\n");
+
+  const areaLower = area.split(/\s+/)[0].toLowerCase();
+  const areaTests = testFiles.filter(f => f.toLowerCase().includes(areaLower));
+  const result = areaTests.length > 0 ? areaTests.slice(0, 10) : testFiles.slice(0, 10);
+  return result.join("\n");
 }
 
 /** Get an example pattern from the first matching file */
 function getExamplePattern(files: string): string {
   const firstFile = files.split("\n").filter(Boolean)[0];
   if (!firstFile) return "no pattern available";
-  return run(`head -30 '${shellEscape(firstFile)}' 2>/dev/null || echo 'could not read file'`);
+  const fullPath = join(PROJECT_DIR, firstFile);
+  try {
+    const content = readFileSync(fullPath, "utf-8");
+    return content.split("\n").slice(0, 30).join("\n");
+  } catch {
+    return "could not read file";
+  }
 }
 
 // ---------------------------------------------------------------------------
