@@ -289,13 +289,29 @@ export async function insertEvents(events: TimelineEvent[], projectDir?: string)
   }
 }
 
+/** Escape a string value for use in LanceDB SQL WHERE clauses. */
+export function escapeSqlString(value: string): string {
+  // Escape single quotes by doubling them and strip null bytes
+  return value.replace(/\0/g, "").replace(/'/g, "''");
+}
+
+/** Validate that an EventType value is one of the known types (prevents injection via type field). */
+function isValidEventType(value: string): value is EventType {
+  return (EVENT_TYPES as readonly string[]).includes(value);
+}
+
 function buildWhereFilter(opts: SearchOptions): string | undefined {
   const clauses: string[] = [];
-  if (opts.project) clauses.push(`project = '${opts.project}'`);
-  if (opts.branch) clauses.push(`branch = '${opts.branch}'`);
-  if (opts.type) clauses.push(`type = '${opts.type}'`);
-  if (opts.since) clauses.push(`timestamp >= '${opts.since}'`);
-  if (opts.until) clauses.push(`timestamp <= '${opts.until}'`);
+  if (opts.project) clauses.push(`project = '${escapeSqlString(opts.project)}'`);
+  if (opts.branch) clauses.push(`branch = '${escapeSqlString(opts.branch)}'`);
+  if (opts.type) {
+    if (!isValidEventType(opts.type)) {
+      throw new Error(`Invalid event type: ${opts.type}`);
+    }
+    clauses.push(`type = '${opts.type}'`);
+  }
+  if (opts.since) clauses.push(`timestamp >= '${escapeSqlString(opts.since)}'`);
+  if (opts.until) clauses.push(`timestamp <= '${escapeSqlString(opts.until)}'`);
   return clauses.length > 0 ? clauses.join(" AND ") : undefined;
 }
 
@@ -358,7 +374,7 @@ export async function searchExact(
   opts: SearchOptions = {},
 ): Promise<TimelineRecord[]> {
   const limit = opts.limit || 50;
-  const likeClauses = [`content LIKE '%${query.replace(/'/g, "''")}%'`];
+  const likeClauses = [`content LIKE '%${escapeSqlString(query)}%'`];
   const where = buildWhereFilter(opts);
   const fullWhere = where ? `${likeClauses[0]} AND ${where}` : likeClauses[0];
 

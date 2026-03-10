@@ -1,0 +1,61 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+#
+# Define contracts that preflight should know about. These supplement
+# auto-extracted contracts from your codebase. If a manual contract has
+# the same name as an auto-extracted one, the manual definition wins.
+#
+# Use cases:
+#   - Document API contracts that aren't easily extracted from code
+#   - Define expected shapes for external services
+#   - Add contracts for planned-but-not-yet-built features
+#
+# You can split contracts across multiple files in this directory:
+#   contracts/api.yml, contracts/events.yml, contracts/external.yml, etc.
+
+- name: User
+  kind: interface
+  description: Core user model shared across services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: RewardsTier
+  kind: interface
+  description: Reward tier levels and their perks
+  fields:
+    - name: tier
+      type: "'bronze' | 'silver' | 'gold' | 'platinum'"
+      required: true
+    - name: multiplier
+      type: number
+      required: true
+    - name: perks
+      type: string[]
+      required: false
+
+- name: AuthToken
+  kind: interface
+  description: JWT payload structure from auth-service
+  fields:
+    - name: userId
+      type: string
+      required: true
+    - name: tier
+      type: string
+      required: true
+    - name: permissions
+      type: string[]
+      required: true
+    - name: exp
+      type: number
+      required: true
