@@ -406,6 +406,8 @@ This prevents the common failure mode: changing a shared type in one service and
 
 ## Configuration Reference
 
+> **Quick start:** Copy the [`.preflight.example/`](.preflight.example/) directory into your project as `.preflight/` and customize. All files are optional.
+
 ### `.preflight/config.yml`
 
 Drop this in your project root. Every field is optional — defaults are sensible.

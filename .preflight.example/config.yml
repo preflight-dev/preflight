@@ -1,0 +1,36 @@
+# .preflight/config.yml — copy this directory to .preflight/ in your project root
+#
+# This configures preflight's behavior for your project.
+# Every field is optional — defaults are sensible.
+# Commit this to your repo so your whole team gets the same experience.
+
+# Profile controls overall verbosity
+# "minimal" — only flag ambiguous+, skip clarification detail
+# "standard" — default behavior (recommended)
+# "full" — maximum detail on every non-trivial prompt
+profile: standard
+
+# Related projects for cross-service awareness
+# Preflight will search these projects' session history and contracts
+# when it detects cross-service prompts (e.g. "update the auth flow")
+related_projects:
+  # - path: /absolute/path/to/auth-service
+  #   alias: auth-service
+  # - path: /absolute/path/to/shared-types
+  #   alias: shared-types
+
+# Behavioral thresholds
+thresholds:
+  # Warn if no session activity for this many minutes
+  session_stale_minutes: 30
+  # Suggest a checkpoint after this many tool calls
+  max_tool_calls_before_checkpoint: 100
+  # Minimum logged corrections before a pattern is formed
+  correction_pattern_threshold: 3
+
+# Embedding configuration for semantic search
+embeddings:
+  # "local" uses Xenova transformers (no API key needed, runs on CPU)
+  # "openai" uses OpenAI's embedding API (faster, needs key)
+  provider: local
+  # openai_api_key: sk-...  # only needed if provider is "openai"

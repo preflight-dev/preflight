@@ -1,0 +1,39 @@
+# .preflight/contracts/api.yml — manual contract definitions
+#
+# Define your project's key types and interfaces here.
+# These supplement auto-extracted contracts from your codebase.
+# Manual definitions win on name conflicts with auto-extracted ones.
+#
+# Why? Auto-extraction may miss domain-specific semantics.
+# Manual contracts let you annotate what matters to your team.
+
+- name: User
+  kind: interface
+  description: Core user object returned by auth endpoints
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+# - name: ApiResponse
+#   kind: interface
+#   description: Standard API response wrapper
+#   fields:
+#     - name: data
+#       type: T
+#       required: true
+#     - name: error
+#       type: string | null
+#       required: false
+#     - name: meta
+#       type: "{ page: number, total: number }"
+#       required: false

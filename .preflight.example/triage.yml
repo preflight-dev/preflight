@@ -1,0 +1,44 @@
+# .preflight/triage.yml — controls the triage classification engine
+#
+# Customize how preflight classifies your prompts.
+# This is where you teach preflight about YOUR project's domain.
+
+rules:
+  # Prompts containing these words are ALWAYS flagged as ambiguous.
+  # Add domain-specific terms that tend to produce vague prompts.
+  # Example: "fix rewards" is too vague — which rewards? what's broken?
+  always_check:
+    - rewards
+    - permissions
+    - migration
+    - schema
+    # Add your own:
+    # - billing
+    # - onboarding
+
+  # Prompts containing these words pass through as TRIVIAL.
+  # These are safe, well-understood commands that don't need checks.
+  skip:
+    - commit
+    - format
+    - lint
+    # Add your own:
+    # - typecheck
+    # - prettier
+
+  # Prompts containing these words trigger CROSS-SERVICE checks.
+  # Preflight will search related projects for relevant contracts.
+  cross_service_keywords:
+    - auth
+    - notification
+    - event
+    - webhook
+    # Add your own:
+    # - payment
+    # - analytics
+
+# How aggressively to classify
+# "relaxed" — more prompts pass as clear (experienced users)
+# "standard" — balanced (recommended)
+# "strict" — more prompts flagged as ambiguous (new team members, complex projects)
+strictness: standard
