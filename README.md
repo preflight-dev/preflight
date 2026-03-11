@@ -337,6 +337,85 @@ After onboarding, you get:
 
 ---
 
+## Usage Examples
+
+Real prompts you'd type in Claude Code once preflight is installed. The tools fire automatically via `preflight_check`, or you can call them directly.
+
+### Catch a vague prompt before it wastes tokens
+
+```
+> fix the auth bug
+
+preflight_check intercepts → clarify_intent fires:
+  "I found 3 auth-related recent changes:
+   1. JWT refresh logic in src/auth/jwt.ts (modified 2h ago)
+   2. OAuth callback route in src/routes/oauth.ts (3 open TODOs)
+   3. Session middleware in src/middleware/auth.ts (failing test)
+   Which one? Or describe the symptoms."
+```
+
+### Scope a multi-step task before starting
+
+```
+> refactor the database layer to use Drizzle instead of Prisma
+
+preflight_check triages as MULTI-STEP → scope_work + sequence_tasks fire:
+  Phase 1: Install drizzle-orm, create schema (src/db/schema.ts)
+  Phase 2: Migrate queries in src/services/ (12 files)
+  Phase 3: Update tests (8 files reference prisma mocks)
+  Phase 4: Remove prisma dependencies, delete prisma/ dir
+  Estimated: 4 checkpoints, ~45 min
+```
+
+### Search your session history
+
+```
+> use search_history to find how I set up the rate limiter
+
+Searches LanceDB across your indexed sessions:
+  Found 3 relevant events (similarity > 0.82):
+  - Session abc123 (Jan 15): Added express-rate-limit to src/middleware/
+  - Session def456 (Jan 16): Configured per-route limits in src/routes/api.ts
+  - Session ghi789 (Feb 2): Fixed rate limit bypass via X-Forwarded-For
+```
+
+### Grade your prompting habits
+
+```
+> use prompt_score on "update the thing"
+
+  Grade: D
+  - Specificity: 1/5 — no file paths, no identifiers
+  - Scope: 1/5 — "the thing" is completely ambiguous
+  - Actionability: 2/5 — "update" is vague (refactor? fix? add feature?)
+  - Done-condition: 0/5 — no way to know when it's done
+  Suggestion: "Update the price formatter in src/utils/currency.ts
+  to handle JPY (zero-decimal currency)"
+```
+
+### Check session health mid-work
+
+```
+> use check_session_health
+
+  ⚠️ 47 uncommitted files (last commit: 38 min ago)
+  ⚠️ 23 turns since last checkpoint
+  💡 Consider running `checkpoint` before context compaction hits
+```
+
+### Get a cost estimate
+
+```
+> use estimate_cost
+
+  This session: ~$2.40 (148K tokens)
+  Waste from corrections: ~$0.85 (3 wrong→fix cycles)
+  Preflight savings: ~$1.20 (4 vague prompts caught early)
+  Net: saving roughly 35% vs unchecked prompting
+```
+
+---
+
 ## The 12-Category Scorecard
 
 `generate_scorecard` evaluates your prompt discipline across 12 categories. Each one measures something specific about how you interact with Claude Code:
