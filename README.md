@@ -500,6 +500,8 @@ Manual contract definitions that supplement auto-extraction:
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
 
+> 💡 **Ready-to-use examples:** Copy [`examples/.preflight/`](examples/.preflight/) into your project root for a working starter config with detailed comments.
+
 ---
 
 ## Embedding Providers
@@ -558,6 +560,95 @@ flowchart TB
     │   └── baseline.json                 # Historical scorecard averages
     └── f6e5d4c3b2a1/
         └── ...                           # Another project
+```
+
+---
+
+## Troubleshooting
+
+### "Cannot find module 'vectordb'" or LanceDB import errors
+
+LanceDB uses native binaries. If you see module resolution errors:
+
+```bash
+# Clean install with native deps rebuilt
+rm -rf node_modules package-lock.json
+npm install
+
+# If still failing, check your Node version (20+ required)
+node --version
+```
+
+On Apple Silicon Macs, make sure you're running a native arm64 Node — not Rosetta. Check with `node -e "console.log(process.arch)"` (should print `arm64`).
+
+### First run is slow (~90MB model download)
+
+The local embedding provider ([Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2)) downloads a ~90MB model on first use. This is a one-time cost — subsequent runs use the cached model. If the download hangs behind a corporate proxy, switch to OpenAI embeddings:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export EMBEDDING_PROVIDER=openai
+```
+
+### "OpenAI API key required for openai embedding provider"
+
+You set `EMBEDDING_PROVIDER=openai` (or `embeddings.provider: openai` in `.preflight/config.yml`) but didn't provide a key. Either:
+
+- Set `OPENAI_API_KEY` in your environment, or
+- Switch back to local: `export EMBEDDING_PROVIDER=local`
+
+### Tools not showing up in Claude Code
+
+1. Make sure the MCP server is registered. Run `claude mcp list` — you should see `preflight`.
+2. If missing, re-add it:
+   ```bash
+   claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+   ```
+3. Restart Claude Code after adding.
+
+### `CLAUDE_PROJECT_DIR` not set
+
+Some tools (onboarding, session search, contracts) need to know your project root. If they return empty results:
+
+```bash
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/path/to/your/project \
+  -- npx tsx /path/to/preflight/src/index.ts
+```
+
+Or set it globally: `export CLAUDE_PROJECT_DIR=/path/to/your/project`
+
+### `.preflight/config.yml` parse errors
+
+If you see `warning - failed to parse .preflight/config.yml`, your YAML is malformed. Common issues:
+
+- Tabs instead of spaces (YAML requires spaces)
+- Missing quotes around values with special characters
+- Incorrect indentation under `related_projects`
+
+Validate with: `npx yaml-lint .preflight/config.yml` or paste into [yamllint.com](https://www.yamllint.com/).
+
+### No session data found during onboarding
+
+`onboard_project` looks for JSONL files in `~/.claude/projects/<encoded-path>/`. If nothing is found:
+
+- Make sure you've actually used Claude Code on the project (at least one session)
+- Check that `CLAUDE_PROJECT_DIR` matches the exact path Claude Code was opened in
+- The path encoding is URL-style — `/Users/jack/my-app` becomes `%2FUsers%2Fjack%2Fmy-app`
+
+### Ollama embeddings connection refused
+
+If using Ollama as your embedding provider and getting connection errors:
+
+```bash
+# Make sure Ollama is running
+ollama serve
+
+# Pull the embedding model
+ollama pull all-minilm
+
+# Verify it works
+curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
 ```
 
 ---

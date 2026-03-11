@@ -55,9 +55,11 @@ export interface ProjectInfo {
 }
 
 export interface TimelineConfig {
-  embedding_provider: "local" | "openai";
+  embedding_provider: "local" | "openai" | "ollama";
   embedding_model: string;
   openai_api_key?: string;
+  ollama_base_url?: string;
+  ollama_model?: string;
   indexed_projects: Record<string, {
     last_session_index: string;
     last_git_index: string;
@@ -183,10 +185,13 @@ export async function getDb(projectDir: string): Promise<lancedb.Connection> {
 async function getEmbedder(): Promise<EmbeddingProvider> {
   if (!_embedder) {
     const config = await loadConfig();
-    _embedder = createEmbeddingProvider({
-      provider: config.embedding_provider,
-      apiKey: config.openai_api_key,
-    });
+    const embeddingConfig: EmbeddingConfig =
+      config.embedding_provider === "openai"
+        ? { provider: "openai", apiKey: config.openai_api_key! }
+        : config.embedding_provider === "ollama"
+          ? { provider: "ollama", baseUrl: config.ollama_base_url, model: config.ollama_model }
+          : { provider: "local" };
+    _embedder = createEmbeddingProvider(embeddingConfig);
   }
   return _embedder;
 }

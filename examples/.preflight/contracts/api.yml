@@ -1,0 +1,58 @@
+# .preflight/contracts/api.yml — Manual contract definitions
+#
+# Define shared types and interfaces that preflight should know about.
+# These supplement auto-extracted contracts from your codebase.
+# Manual definitions win on name conflicts with auto-extracted ones.
+#
+# Why manual contracts?
+#   - Document cross-service interfaces that live in docs, not code
+#   - Define contracts for external APIs your services consume
+#   - Pin down types that are implicit (e.g., event payloads)
+
+- name: User
+  kind: interface
+  description: Core user model shared across all services
+  fields:
+    - name: id
+      type: string
+      required: true
+    - name: email
+      type: string
+      required: true
+    - name: tier
+      type: "'free' | 'pro' | 'enterprise'"
+      required: true
+    - name: createdAt
+      type: Date
+      required: true
+
+- name: AuthToken
+  kind: interface
+  description: JWT payload structure from auth-service
+  fields:
+    - name: userId
+      type: string
+      required: true
+    - name: permissions
+      type: string[]
+      required: true
+    - name: expiresAt
+      type: number
+      required: true
+
+- name: WebhookPayload
+  kind: interface
+  description: Standard webhook envelope for inter-service events
+  fields:
+    - name: event
+      type: string
+      required: true
+    - name: timestamp
+      type: string
+      required: true
+    - name: data
+      type: Record<string, unknown>
+      required: true
+    - name: source
+      type: string
+      required: true
