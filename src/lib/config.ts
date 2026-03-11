@@ -11,7 +11,7 @@ import { load as yamlLoad } from "js-yaml";
 import { PROJECT_DIR } from "./files.js";
 
 export type Profile = "minimal" | "standard" | "full";
-export type EmbeddingProvider = "local" | "openai";
+export type EmbeddingProvider = "local" | "openai" | "voyage";
 export type TriageStrictness = "relaxed" | "standard" | "strict";
 
 export interface RelatedProject {
@@ -30,6 +30,8 @@ export interface PreflightConfig {
   embeddings: {
     provider: EmbeddingProvider;
     openai_api_key?: string;
+    voyage_api_key?: string;
+    voyage_model?: string;
   };
   triage: {
     rules: {
@@ -125,13 +127,21 @@ function loadConfig(): PreflightConfig {
 
     // Embedding provider
     const envProvider = process.env.EMBEDDING_PROVIDER?.toLowerCase();
-    if (envProvider === "local" || envProvider === "openai") {
+    if (envProvider === "local" || envProvider === "openai" || envProvider === "voyage") {
       config.embeddings.provider = envProvider;
     }
 
     // OpenAI API key
     if (process.env.OPENAI_API_KEY) {
       config.embeddings.openai_api_key = process.env.OPENAI_API_KEY;
+    }
+
+    // Voyage AI API key and model
+    if (process.env.VOYAGE_API_KEY) {
+      config.embeddings.voyage_api_key = process.env.VOYAGE_API_KEY;
+    }
+    if (process.env.VOYAGE_MODEL) {
+      config.embeddings.voyage_model = process.env.VOYAGE_MODEL;
     }
   }
 

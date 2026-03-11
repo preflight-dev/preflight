@@ -55,9 +55,11 @@ export interface ProjectInfo {
 }
 
 export interface TimelineConfig {
-  embedding_provider: "local" | "openai";
+  embedding_provider: "local" | "openai" | "voyage";
   embedding_model: string;
   openai_api_key?: string;
+  voyage_api_key?: string;
+  voyage_model?: string;
   indexed_projects: Record<string, {
     last_session_index: string;
     last_git_index: string;
@@ -185,7 +187,8 @@ async function getEmbedder(): Promise<EmbeddingProvider> {
     const config = await loadConfig();
     _embedder = createEmbeddingProvider({
       provider: config.embedding_provider,
-      apiKey: config.openai_api_key,
+      apiKey: config.embedding_provider === "voyage" ? config.voyage_api_key : config.openai_api_key,
+      voyageModel: config.voyage_model,
     });
   }
   return _embedder;
