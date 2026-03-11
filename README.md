@@ -76,10 +76,10 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: Claude Code CLI (fastest)
+### Option A: npx (fastest — no install)
 
 ```bash
-claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+claude mcp add preflight -- npx -y preflight-dev-serve
 ```
 
 With environment variables:
@@ -87,7 +87,7 @@ With environment variables:
 ```bash
 claude mcp add preflight \
   -e CLAUDE_PROJECT_DIR=/path/to/your/project \
-  -- npx tsx /path/to/preflight/src/index.ts
+  -- npx -y preflight-dev-serve
 ```
 
 ### Option B: Clone & configure manually
@@ -119,8 +119,10 @@ Restart Claude Code. The tools activate automatically.
 
 ```bash
 npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
+claude mcp add preflight -- preflight-dev-serve
 ```
+
+> **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
 
 ---
 
@@ -335,6 +337,85 @@ After onboarding, you get:
 
 ---
 
+## Usage Examples
+
+Real prompts you'd type in Claude Code once preflight is installed. The tools fire automatically via `preflight_check`, or you can call them directly.
+
+### Catch a vague prompt before it wastes tokens
+
+```
+> fix the auth bug
+
+preflight_check intercepts → clarify_intent fires:
+  "I found 3 auth-related recent changes:
+   1. JWT refresh logic in src/auth/jwt.ts (modified 2h ago)
+   2. OAuth callback route in src/routes/oauth.ts (3 open TODOs)
+   3. Session middleware in src/middleware/auth.ts (failing test)
+   Which one? Or describe the symptoms."
+```
+
+### Scope a multi-step task before starting
+
+```
+> refactor the database layer to use Drizzle instead of Prisma
+
+preflight_check triages as MULTI-STEP → scope_work + sequence_tasks fire:
+  Phase 1: Install drizzle-orm, create schema (src/db/schema.ts)
+  Phase 2: Migrate queries in src/services/ (12 files)
+  Phase 3: Update tests (8 files reference prisma mocks)
+  Phase 4: Remove prisma dependencies, delete prisma/ dir
+  Estimated: 4 checkpoints, ~45 min
+```
+
+### Search your session history
+
+```
+> use search_history to find how I set up the rate limiter
+
+Searches LanceDB across your indexed sessions:
+  Found 3 relevant events (similarity > 0.82):
+  - Session abc123 (Jan 15): Added express-rate-limit to src/middleware/
+  - Session def456 (Jan 16): Configured per-route limits in src/routes/api.ts
+  - Session ghi789 (Feb 2): Fixed rate limit bypass via X-Forwarded-For
+```
+
+### Grade your prompting habits
+
+```
+> use prompt_score on "update the thing"
+
+  Grade: D
+  - Specificity: 1/5 — no file paths, no identifiers
+  - Scope: 1/5 — "the thing" is completely ambiguous
+  - Actionability: 2/5 — "update" is vague (refactor? fix? add feature?)
+  - Done-condition: 0/5 — no way to know when it's done
+  Suggestion: "Update the price formatter in src/utils/currency.ts
+  to handle JPY (zero-decimal currency)"
+```
+
+### Check session health mid-work
+
+```
+> use check_session_health
+
+  ⚠️ 47 uncommitted files (last commit: 38 min ago)
+  ⚠️ 23 turns since last checkpoint
+  💡 Consider running `checkpoint` before context compaction hits
+```
+
+### Get a cost estimate
+
+```
+> use estimate_cost
+
+  This session: ~$2.40 (148K tokens)
+  Waste from corrections: ~$0.85 (3 wrong→fix cycles)
+  Preflight savings: ~$1.20 (4 vague prompts caught early)
+  Net: saving roughly 35% vs unchecked prompting
+```
+
+---
+
 ## The 12-Category Scorecard
 
 `generate_scorecard` evaluates your prompt discipline across 12 categories. Each one measures something specific about how you interact with Claude Code:
@@ -500,6 +581,8 @@ Manual contract definitions that supplement auto-extraction:
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.
 
+> 💡 **Ready-to-use examples:** Copy [`examples/.preflight/`](examples/.preflight/) into your project root for a working starter config with detailed comments.
+
 ---
 
 ## Embedding Providers
@@ -558,6 +641,95 @@ flowchart TB
     │   └── baseline.json                 # Historical scorecard averages
     └── f6e5d4c3b2a1/
         └── ...                           # Another project
+```
+
+---
+
+## Troubleshooting
+
+### "Cannot find module 'vectordb'" or LanceDB import errors
+
+LanceDB uses native binaries. If you see module resolution errors:
+
+```bash
+# Clean install with native deps rebuilt
+rm -rf node_modules package-lock.json
+npm install
+
+# If still failing, check your Node version (20+ required)
+node --version
+```
+
+On Apple Silicon Macs, make sure you're running a native arm64 Node — not Rosetta. Check with `node -e "console.log(process.arch)"` (should print `arm64`).
+
+### First run is slow (~90MB model download)
+
+The local embedding provider ([Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2)) downloads a ~90MB model on first use. This is a one-time cost — subsequent runs use the cached model. If the download hangs behind a corporate proxy, switch to OpenAI embeddings:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export EMBEDDING_PROVIDER=openai
+```
+
+### "OpenAI API key required for openai embedding provider"
+
+You set `EMBEDDING_PROVIDER=openai` (or `embeddings.provider: openai` in `.preflight/config.yml`) but didn't provide a key. Either:
+
+- Set `OPENAI_API_KEY` in your environment, or
+- Switch back to local: `export EMBEDDING_PROVIDER=local`
+
+### Tools not showing up in Claude Code
+
+1. Make sure the MCP server is registered. Run `claude mcp list` — you should see `preflight`.
+2. If missing, re-add it:
+   ```bash
+   claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+   ```
+3. Restart Claude Code after adding.
+
+### `CLAUDE_PROJECT_DIR` not set
+
+Some tools (onboarding, session search, contracts) need to know your project root. If they return empty results:
+
+```bash
+claude mcp add preflight \
+  -e CLAUDE_PROJECT_DIR=/path/to/your/project \
+  -- npx tsx /path/to/preflight/src/index.ts
+```
+
+Or set it globally: `export CLAUDE_PROJECT_DIR=/path/to/your/project`
+
+### `.preflight/config.yml` parse errors
+
+If you see `warning - failed to parse .preflight/config.yml`, your YAML is malformed. Common issues:
+
+- Tabs instead of spaces (YAML requires spaces)
+- Missing quotes around values with special characters
+- Incorrect indentation under `related_projects`
+
+Validate with: `npx yaml-lint .preflight/config.yml` or paste into [yamllint.com](https://www.yamllint.com/).
+
+### No session data found during onboarding
+
+`onboard_project` looks for JSONL files in `~/.claude/projects/<encoded-path>/`. If nothing is found:
+
+- Make sure you've actually used Claude Code on the project (at least one session)
+- Check that `CLAUDE_PROJECT_DIR` matches the exact path Claude Code was opened in
+- The path encoding is URL-style — `/Users/jack/my-app` becomes `%2FUsers%2Fjack%2Fmy-app`
+
+### Ollama embeddings connection refused
+
+If using Ollama as your embedding provider and getting connection errors:
+
+```bash
+# Make sure Ollama is running
+ollama serve
+
+# Pull the embedding model
+ollama pull all-minilm
+
+# Verify it works
+curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
 ```
 
 ---
