@@ -1,3 +1,34 @@
+// =============================================================================
+// Timeline Database — LanceDB-backed Semantic Search for Session History
+// =============================================================================
+// This is the persistence and query layer for preflight's "Timeline Intelligence"
+// tools (search_history, timeline_view, scan_sessions, onboard_project).
+//
+// Architecture:
+//   ~/.preflight/                     ← global preflight data directory
+//   ├── config.json                   ← embedding provider settings + legacy index
+//   └── projects/
+//       ├── index.json                ← registry mapping project paths → hashes
+//       └── <hash>/                   ← per-project data (hash of absolute path)
+//           ├── timeline.lance/       ← LanceDB vector database
+//           └── meta.json             ← project metadata (event counts, etc.)
+//
+// Each project gets its own LanceDB instance keyed by a SHA-256 hash of its
+// absolute path. Events (prompts, responses, commits, corrections, errors) are
+// embedded via the configured provider (see embeddings.ts) and stored with
+// metadata for filtered retrieval.
+//
+// Key functions:
+//   insertEvents()       — embed and store timeline events
+//   searchSemantic()     — vector similarity search across projects
+//   searchExact()        — SQL LIKE text search (no embeddings)
+//   getTimeline()        — chronological event retrieval with filters
+//   listIndexedProjects()— list all onboarded projects and their stats
+//
+// Connection pooling: LanceDB connections are cached per project directory
+// in _connections Map. The embedding provider is lazily initialized once.
+// =============================================================================
+
 import * as lancedb from "@lancedb/lancedb";
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
@@ -191,6 +222,12 @@ async function getEmbedder(): Promise<EmbeddingProvider> {
   return _embedder;
 }
 
+/**
+ * Get or create the "events" table for a project's LanceDB instance.
+ * On first call for a new project, creates the table with a seed record
+ * (then deletes it) because LanceDB requires at least one record to infer
+ * the schema and vector dimensions.
+ */
 export async function getEventsTable(projectDir: string): Promise<lancedb.Table> {
   const db = await getDb(projectDir);
   try {
@@ -222,6 +259,12 @@ export async function getEventsTable(projectDir: string): Promise<lancedb.Table>
 
 // --- Core Operations ---
 
+/**
+ * Embed and insert timeline events into LanceDB. Events are grouped by project
+ * directory (from event.project or the explicit projectDir param), embedded in
+ * batch via the configured provider, and stored with full metadata. Also updates
+ * the project registry and per-project metadata counts.
+ */
 export async function insertEvents(events: TimelineEvent[], projectDir?: string): Promise<void> {
   if (events.length === 0) return;
 
@@ -289,6 +332,7 @@ export async function insertEvents(events: TimelineEvent[], projectDir?: string)
   }
 }
 
+/** Build a SQL WHERE clause from search options for LanceDB filtering. */
 function buildWhereFilter(opts: SearchOptions): string | undefined {
   const clauses: string[] = [];
   if (opts.project) clauses.push(`project = '${opts.project}'`);

@@ -1,3 +1,24 @@
+// =============================================================================
+// Embedding Providers for Preflight Timeline Search
+// =============================================================================
+// Converts text (prompts, commits, corrections) into dense vectors for
+// semantic similarity search in LanceDB. Two providers are supported:
+//
+//   1. **Local** (default) — Xenova/all-MiniLM-L6-v2 (384-dim, ~90MB download
+//      on first use, runs entirely on-device, no API key needed)
+//   2. **OpenAI** — text-embedding-3-small (1536-dim, requires OPENAI_API_KEY,
+//      batches up to 100 texts per request)
+//
+// Text is preprocessed before embedding: markdown is stripped, whitespace is
+// normalized, and content is truncated to ~2048 chars (~512 tokens) to stay
+// within model context limits.
+//
+// Usage:
+//   const provider = createEmbeddingProvider({ provider: "local" });
+//   const vector = await provider.embed("fix the auth bug");
+//   const vectors = await provider.embedBatch(["text1", "text2"]);
+// =============================================================================
+
 import { pipeline } from "@xenova/transformers";
 
 // --- Types ---
