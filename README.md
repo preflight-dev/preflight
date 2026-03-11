@@ -717,20 +717,18 @@ Validate with: `npx yaml-lint .preflight/config.yml` or paste into [yamllint.com
 - Check that `CLAUDE_PROJECT_DIR` matches the exact path Claude Code was opened in
 - The path encoding is URL-style — `/Users/jack/my-app` becomes `%2FUsers%2Fjack%2Fmy-app`
 
-### Ollama embeddings connection refused
+### Which embedding providers are supported?
 
-If using Ollama as your embedding provider and getting connection errors:
+Currently **two** providers are supported on `main`:
 
-```bash
-# Make sure Ollama is running
-ollama serve
+| Provider | Model | Requires API key? | Notes |
+|----------|-------|--------------------|-------|
+| `local` (default) | Xenova/all-MiniLM-L6-v2 | No | Runs on CPU, ~90MB one-time download |
+| `openai` | text-embedding-3-small | Yes (`OPENAI_API_KEY`) | Faster, requires network |
 
-# Pull the embedding model
-ollama pull all-minilm
+Set via `.preflight/config.yml` (`embeddings.provider`) or `EMBEDDING_PROVIDER` env var.
 
-# Verify it works
-curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
-```
+> **Coming soon:** Ollama and Voyage embedding providers are in development on feature branches.
 
 ---
 
