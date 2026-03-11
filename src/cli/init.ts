@@ -104,18 +104,11 @@ async function main(): Promise<void> {
     }
   }
 
+  // Use npx to run the MCP server via the dedicated serve binary.
+  // "preflight-dev" runs the init wizard; "preflight-dev-serve" starts the server.
   config.mcpServers["preflight"] = {
     command: "npx",
-    args: ["-y", "preflight-dev@latest"],
-    env,
-  };
-
-  // For the actual server entry point, we need to point to index.ts via tsx
-  // But npx will resolve the bin entry which is the init script
-  // So use a different approach: command runs the server
-  config.mcpServers["preflight"] = {
-    command: "npx",
-    args: ["-y", "tsx", "node_modules/preflight/src/index.ts"],
+    args: ["-y", "preflight-dev-serve"],
     env,
   };
 
