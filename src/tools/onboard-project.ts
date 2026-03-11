@@ -30,15 +30,17 @@ export function registerOnboardProject(server: McpServer) {
     "Index a project's Claude Code sessions and git history into the timeline database for semantic search and chronological viewing.",
     {
       project_dir: z.string().describe("Absolute path to the project directory"),
-      embedding_provider: z.enum(["local", "openai"]).default("local"),
+      embedding_provider: z.enum(["local", "openai", "voyage"]).default("local"),
       openai_api_key: z.string().optional(),
+      voyage_api_key: z.string().optional().describe("Voyage AI API key (required when embedding_provider is 'voyage')"),
+      voyage_model: z.string().optional().describe("Voyage model to use (default: 'voyage-3')"),
       git_depth: z.enum(["all", "6months", "1year", "3months"]).default("all"),
       git_since: z.string().optional().describe("Override git_depth with exact start date (ISO: '2025-08-01')"),
       git_authors: z.array(z.string()).optional().describe("Filter git commits to these authors. If omitted, auto-detects the primary author (most commits)."),
       reindex: z.boolean().default(false).describe("If true, drop existing data and rebuild from scratch"),
     },
     async (params) => {
-      const { project_dir, embedding_provider, openai_api_key, git_depth, git_since, git_authors, reindex } = params;
+      const { project_dir, embedding_provider, openai_api_key, voyage_api_key, voyage_model, git_depth, git_since, git_authors, reindex } = params;
 
       // 1. Validate project_dir
       if (!fs.existsSync(project_dir)) {
@@ -173,7 +175,8 @@ export function registerOnboardProject(server: McpServer) {
       // 6. Embed all events in batches
       const embedder = createEmbeddingProvider({
         provider: embedding_provider,
-        apiKey: openai_api_key,
+        apiKey: embedding_provider === "voyage" ? voyage_api_key : openai_api_key,
+        voyageModel: voyage_model,
       });
 
       const BATCH_SIZE = 50;

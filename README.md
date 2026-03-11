@@ -270,11 +270,11 @@ Run `onboard_project` to index a project's history. Here's what happens:
 2. **Parses events** — extracts the 8 event types from each session file (streams files >10MB)
 3. **Extracts contracts** — scans source for types, interfaces, enums, routes, Prisma models, OpenAPI schemas
 4. **Loads manual contracts** — merges any `.preflight/contracts/*.yml` definitions (manual wins on name conflicts)
-5. **Generates embeddings** — local [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) by default (~90MB model download on first run, ~50 events/sec) or OpenAI if `OPENAI_API_KEY` is set (~200 events/sec)
+5. **Generates embeddings** — local [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) by default (~90MB model download on first run, ~50 events/sec), OpenAI if `OPENAI_API_KEY` is set (~200 events/sec), or [Voyage AI](https://voyageai.com/) if `VOYAGE_API_KEY` is set
 6. **Stores in LanceDB** — per-project database at `~/.preflight/projects/<sha256-12>/timeline.lance/`
 7. **Updates registry** — records the project in `~/.preflight/projects/index.json`
 
-No data leaves your machine unless you opt into OpenAI embeddings.
+No data leaves your machine unless you opt into OpenAI or Voyage AI embeddings.
 
 After onboarding, you get:
 - 🔎 **Semantic search** — "How did I set up auth middleware last month?" actually works
@@ -511,8 +511,10 @@ thresholds:
 
 # Embedding configuration
 embeddings:
-  provider: local                          # type: "local" | "openai"
+  provider: local                          # type: "local" | "openai" | "voyage"
   openai_api_key: sk-...                   # type: string — only needed if provider is "openai"
+  voyage_api_key: pa-...                   # type: string — only needed if provider is "voyage"
+  voyage_model: voyage-3                   # type: string — Voyage model (default: "voyage-3")
 ```
 
 ### `.preflight/triage.yml`
@@ -575,8 +577,10 @@ Manual contract definitions that supplement auto-extraction:
 |----------|-------------|---------|
 | `CLAUDE_PROJECT_DIR` | Project root to monitor | **Required** |
 | `OPENAI_API_KEY` | OpenAI key for embeddings | Uses local Xenova |
+| `VOYAGE_API_KEY` | Voyage AI key for embeddings | None |
+| `VOYAGE_MODEL` | Voyage model name | `voyage-3` |
 | `PREFLIGHT_RELATED` | Comma-separated related project paths | None |
-| `EMBEDDING_PROVIDER` | `local` or `openai` | `local` |
+| `EMBEDDING_PROVIDER` | `local`, `openai`, or `voyage` | `local` |
 | `PROMPT_DISCIPLINE_PROFILE` | `minimal`, `standard`, or `full` | `standard` |
 
 Environment variables are **fallbacks** — `.preflight/` config takes precedence when present.

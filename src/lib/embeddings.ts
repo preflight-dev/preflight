@@ -102,17 +102,75 @@ class OpenAIEmbeddingProvider implements EmbeddingProvider {
   }
 }
 
+// --- Voyage AI Provider ---
+
+class VoyageEmbeddingProvider implements EmbeddingProvider {
+  dimensions = 1024;
+  private apiKey: string;
+  private model: string;
+
+  constructor(apiKey: string, model = "voyage-3") {
+    this.apiKey = apiKey;
+    this.model = model;
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const [result] = await this.embedBatch([text]);
+    return result;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    const results: number[][] = [];
+    const processed = texts.map(preprocessText);
+
+    // Voyage supports up to 128 texts per request
+    for (let i = 0; i < processed.length; i += 128) {
+      const batch = processed.slice(i, i + 128);
+      const resp = await fetch("https://api.voyageai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: this.model,
+          input: batch,
+          input_type: "document",
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`Voyage AI embeddings API error ${resp.status}: ${err}`);
+      }
+
+      const data = await resp.json();
+      const sorted = data.data.sort((a: any, b: any) => a.index - b.index);
+      for (const item of sorted) {
+        results.push(item.embedding);
+      }
+    }
+
+    return results;
+  }
+}
+
 // --- Factory ---
 
 export interface EmbeddingConfig {
-  provider: "local" | "openai";
+  provider: "local" | "openai" | "voyage";
   apiKey?: string;
+  voyageModel?: string;
 }
 
 export function createEmbeddingProvider(config: EmbeddingConfig): EmbeddingProvider {
   if (config.provider === "openai") {
     if (!config.apiKey) throw new Error("OpenAI API key required for openai embedding provider");
     return new OpenAIEmbeddingProvider(config.apiKey);
+  }
+  if (config.provider === "voyage") {
+    if (!config.apiKey) throw new Error("Voyage AI API key required for voyage embedding provider");
+    return new VoyageEmbeddingProvider(config.apiKey, config.voyageModel);
   }
   return new LocalEmbeddingProvider();
 }
