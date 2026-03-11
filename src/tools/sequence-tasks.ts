@@ -79,6 +79,7 @@ export function registerSequenceTasks(server: McpServer): void {
       strategy: z.enum(["dependency", "locality", "risk-first"]).default("locality").describe("Sequencing strategy"),
     },
     async ({ tasks, strategy }) => {
+      try {
       const ts = now();
 
       const classified = tasks.map((t) => ({
@@ -177,6 +178,9 @@ export function registerSequenceTasks(server: McpServer): void {
       ].join("\n");
 
       return { content: [{ type: "text" as const, text: result }] };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ sequence_tasks failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }

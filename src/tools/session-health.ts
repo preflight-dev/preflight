@@ -20,6 +20,7 @@ export function registerSessionHealth(server: McpServer): void {
       stale_threshold_hours: z.number().optional().describe("Hours before a doc is considered stale. Default: 2"),
     },
     async ({ stale_threshold_hours }) => {
+      try {
       const config = getConfig();
       const staleHours = stale_threshold_hours ?? (config.thresholds.session_stale_minutes / 60);
       const branch = getBranch();
@@ -102,6 +103,9 @@ ${issues.length ? issues.join("\n") : "None — session is healthy"}
 ${recommendation}`,
         }],
       };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ check_session_health failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }

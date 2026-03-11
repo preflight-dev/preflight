@@ -10,6 +10,7 @@ export function registerWhatChanged(server: McpServer): void {
       since: z.string().optional().describe("Git ref: 'HEAD~5', 'HEAD~3', etc. Default: HEAD~5"),
     },
     async ({ since }) => {
+      try {
       const ref = since || "HEAD~5";
       const diffStat = getDiffStat(ref);
       const diffFiles = run(`git diff ${ref} --name-only 2>/dev/null || git diff HEAD~3 --name-only`);
@@ -43,6 +44,9 @@ ${diffStat || "no changes"}
 \`\`\``,
         }],
       };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ what_changed failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }

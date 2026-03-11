@@ -35,6 +35,7 @@ export function registerAuditWorkspace(server: McpServer): void {
     `Audit workspace documentation freshness vs actual project state. Compares .claude/ workspace docs against recent git commits to find stale or missing documentation. Call after completing a batch of work or at session end.`,
     {},
     async () => {
+      try {
       const docs = findWorkspaceDocs();
       const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
       const sections: string[] = [];
@@ -92,6 +93,9 @@ export function registerAuditWorkspace(server: McpServer): void {
       sections.push(`## Recommendation\n${recs.join("\n")}`);
 
       return { content: [{ type: "text" as const, text: sections.join("\n\n") }] };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ audit_workspace failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }

@@ -15,6 +15,7 @@ export function registerSearchContracts(server: McpServer): void {
       kind: z.enum(["interface", "type", "enum", "route", "schema", "event", "model", "all"]).default("all").describe("Filter by contract kind"),
     },
     async ({ query, scope, kind }) => {
+      try {
       const projectDirs: string[] = [];
 
       if (scope === "current" || scope === "all") {
@@ -56,6 +57,9 @@ export function registerSearchContracts(server: McpServer): void {
       }
 
       return { content: [{ type: "text" as const, text: output.join("\n") }] };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ search_contracts failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }
