@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
+import { run, shell, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
 import { findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
@@ -152,10 +152,10 @@ export function registerClarifyIntent(server: McpServer): void {
       let hasTestFailures = false;
 
       if (!area || area.includes("test") || area.includes("fix") || area.includes("ui") || area.includes("api")) {
-        const typeErrors = run("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
+        const typeErrors = shell("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
         hasTypeErrors = parseInt(typeErrors, 10) > 0;
 
-        const testFiles = run("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
+        const testFiles = shell("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
         const failingTests = getTestFailures();
         hasTestFailures = failingTests !== "all passing" && failingTests !== "no test report found";
 
