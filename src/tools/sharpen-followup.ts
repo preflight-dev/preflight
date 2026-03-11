@@ -51,6 +51,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       previous_files: z.array(z.string()).optional().describe("Files involved in the previous action"),
     },
     async ({ followup_message, previous_action, previous_files }) => {
+      try {
       const msg = followup_message.trim();
       const assumptions: string[] = [];
       const questions: string[] = [];
@@ -195,6 +196,9 @@ export function registerSharpenFollowup(server: McpServer): void {
       lines.push(`_Generated ${now()}_`);
 
       return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ sharpen_followup failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }

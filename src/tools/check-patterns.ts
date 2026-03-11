@@ -10,6 +10,7 @@ export function registerCheckPatterns(server: McpServer): void {
       prompt: z.string().describe("The prompt to check against known patterns"),
     },
     async ({ prompt }) => {
+      try {
       const patterns = loadPatterns();
 
       if (patterns.length === 0) {
@@ -38,6 +39,9 @@ export function registerCheckPatterns(server: McpServer): void {
           text: formatPatternMatches(matches),
         }],
       };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ check_patterns failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     },
   );
 }

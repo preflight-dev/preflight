@@ -17,6 +17,7 @@ export function registerCheckpoint(server: McpServer): void {
       commit_mode: z.enum(["staged", "tracked", "all"]).optional().describe("What to commit: 'staged' (only staged files), 'tracked' (modified tracked files), 'all' (git add -A). Default: 'tracked'"),
     },
     async ({ summary, next_steps, current_blockers, commit_mode }) => {
+      try {
       const mode = commit_mode || "tracked";
       const branch = getBranch();
       const dirty = getStatus();
@@ -114,6 +115,9 @@ ${current_blockers ? "- Current blockers\n" : ""}- Working tree state at checkpo
 Tell the next session/continuation: "Read .claude/last-checkpoint.md for where I left off"`,
         }],
       };
+      } catch (err) {
+        return { content: [{ type: "text" as const, text: `❌ checkpoint failed: ${err instanceof Error ? err.message : String(err)}` }] };
+      }
     }
   );
 }
