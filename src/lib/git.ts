@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -86,4 +86,23 @@ export function getDiffStat(ref = "HEAD~5"): string {
   const fallback = run(["diff", "HEAD~3", "--stat"]);
   if (!fallback.startsWith("[")) return fallback;
   return "no diff stats available";
+}
+
+/**
+ * Run an arbitrary shell command string (with pipes, redirects, etc.).
+ * Use sparingly — prefer `run()` with explicit args for git commands.
+ * Returns stdout trimmed, or empty string on failure.
+ */
+export function shell(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    return "";
+  }
 }
