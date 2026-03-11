@@ -337,6 +337,151 @@ After onboarding, you get:
 
 ---
 
+## Usage Examples
+
+These are real prompts you'd give Claude Code with preflight installed. The tools are called automatically via `preflight_check`, or you can invoke them directly.
+
+### Everyday workflow (just use `preflight_check`)
+
+```
+# Before any task — preflight_check triages and chains the right tools
+preflight_check({ prompt: "refactor the auth middleware to use JWT refresh tokens" })
+
+# Force a full check even if triage says it's simple
+preflight_check({ prompt: "fix the test", force_level: "full" })
+
+# Skip preflight for trivial commands
+preflight_check({ prompt: "git status", force_level: "skip" })
+```
+
+### Planning before coding
+
+```
+# Get a structured execution plan with scope boundaries
+scope_work({ task: "add rate limiting to all public API routes" })
+
+# Scope against a specific branch
+scope_work({ task: "merge feature/payments into main", branch: "feature/payments" })
+```
+
+### Clarifying vague prompts
+
+```
+# "fix the tests" → which tests? what's broken?
+clarify_intent({ user_message: "fix the tests", suspected_area: "tests" })
+
+# "do the same for the others" → which others?
+sharpen_followup({
+  followup_message: "do the same for the others",
+  previous_action: "added input validation to UserForm",
+  previous_files: ["src/components/UserForm.tsx"]
+})
+```
+
+### Sub-agent enrichment
+
+```
+# Before spawning a sub-agent, enrich the task with context
+enrich_agent_task({
+  task_description: "fix the flaky auth tests",
+  target_area: "src/auth/__tests__"
+})
+```
+
+### Searching project history
+
+```
+# First, index your project (one-time setup)
+onboard_project({ project_dir: "/Users/you/my-app" })
+
+# Then search semantically across all sessions
+search_history({ query: "how did we handle the database migration last month?" })
+
+# Search contracts across related services
+search_contracts({ query: "UserProfile", scope: "all", kind: "interface" })
+
+# Chronological view of recent work
+timeline({ since: "3days" })
+```
+
+### Session management
+
+```
+# Save progress before context gets long
+checkpoint({
+  summary: "implemented JWT refresh flow",
+  next_steps: "add tests and update API docs"
+})
+
+# Check if session is getting too long
+check_session_health()
+
+# Generate a handoff brief for the next session
+session_handoff({ direction: "outgoing" })
+
+# Starting a new session? Catch up on what happened
+session_handoff({ direction: "incoming" })
+```
+
+### Analysis and scoring
+
+```
+# Score a single prompt
+prompt_score({ prompt: "fix the bug in auth" })
+# → Grade: C — missing: which bug, which file, what "fixed" looks like
+
+# Generate a weekly trend report
+generate_scorecard({ period: "week", output: "markdown" })
+
+# Estimate token waste
+estimate_cost()
+
+# Detect token waste patterns (repeated reads, bloated context)
+token_audit({ check_mode: "deep" })
+```
+
+### Verification before shipping
+
+```
+# Run type check + tests + git status before declaring done
+verify_completion({ task_description: "add rate limiting to public API routes" })
+
+# Check for stale workspace docs
+audit_workspace()
+```
+
+### Learning from mistakes
+
+```
+# Log a correction so preflight learns the pattern
+log_correction({
+  what_user_said: "no, the auth route is in src/api/auth.ts not src/routes/auth.ts",
+  what_you_did_wrong: "edited the wrong auth file",
+  root_cause: "assumed Rails-style routing structure",
+  category: "wrong_file"
+})
+
+# Check if a new prompt hits known pitfalls
+check_patterns({ prompt: "update the auth route handler" })
+```
+
+### Multi-task sequencing
+
+```
+# Order tasks to minimize context switches
+sequence_tasks({
+  tasks: [
+    "add input validation to UserForm",
+    "write tests for UserForm validation",
+    "add validation to PaymentForm",
+    "update API error responses for validation failures"
+  ],
+  strategy: "locality"
+})
+```
+
+---
+
 ## The 12-Category Scorecard
 
 `generate_scorecard` evaluates your prompt discipline across 12 categories. Each one measures something specific about how you interact with Claude Code:
