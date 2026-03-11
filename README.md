@@ -76,10 +76,10 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: Claude Code CLI (fastest)
+### Option A: npx (fastest — no install)
 
 ```bash
-claude mcp add preflight -- npx tsx /path/to/preflight/src/index.ts
+claude mcp add preflight -- npx -y preflight-dev-serve
 ```
 
 With environment variables:
@@ -87,7 +87,7 @@ With environment variables:
 ```bash
 claude mcp add preflight \
   -e CLAUDE_PROJECT_DIR=/path/to/your/project \
-  -- npx tsx /path/to/preflight/src/index.ts
+  -- npx -y preflight-dev-serve
 ```
 
 ### Option B: Clone & configure manually
@@ -119,8 +119,10 @@ Restart Claude Code. The tools activate automatically.
 
 ```bash
 npm install -g preflight-dev
-claude mcp add preflight -- preflight-dev
+claude mcp add preflight -- preflight-dev-serve
 ```
+
+> **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
 
 ---
 
