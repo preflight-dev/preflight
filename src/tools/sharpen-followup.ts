@@ -1,7 +1,7 @@
 // CATEGORY 4: sharpen_followup — Follow-up Specificity
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, shell } from "../lib/git.js";
 import { now } from "../lib/state.js";
 
 /** Parse git porcelain output into deduplicated file paths, handling renames (R/C) */
@@ -27,15 +27,15 @@ function parsePortelainFiles(output: string): string[] {
 /** Get recently changed files, safe for first commit / shallow clones */
 function getRecentChangedFiles(): string[] {
   // Try HEAD~1..HEAD, fall back to just staged, then unstaged
-  const commands = [
-    "git diff --name-only HEAD~1 HEAD 2>/dev/null",
-    "git diff --name-only --cached 2>/dev/null",
-    "git diff --name-only 2>/dev/null",
+  const argSets: string[][] = [
+    ["diff", "--name-only", "HEAD~1", "HEAD"],
+    ["diff", "--name-only", "--cached"],
+    ["diff", "--name-only"],
   ];
   const results = new Set<string>();
-  for (const cmd of commands) {
-    const out = run(cmd);
-    if (out) out.split("\n").filter(Boolean).forEach((f) => results.add(f));
+  for (const args of argSets) {
+    const out = run(args);
+    if (out && !out.startsWith("[")) out.split("\n").filter(Boolean).forEach((f) => results.add(f));
     if (results.size > 0) break; // first successful source is enough
   }
   return [...results];
@@ -87,7 +87,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       // Gather context to resolve ambiguity
       const contextFiles: string[] = [...(previous_files ?? [])];
       const recentChanged = getRecentChangedFiles();
-      const porcelainOutput = run("git status --porcelain 2>/dev/null");
+      const porcelainOutput = run(["status", "--porcelain"]);
       const untrackedOrModified = parsePortelainFiles(porcelainOutput);
 
       const allKnownFiles = [...new Set([...contextFiles, ...recentChanged, ...untrackedOrModified])].filter(Boolean);
