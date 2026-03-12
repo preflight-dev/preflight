@@ -1,35 +1,34 @@
-# .preflight/config.yml — Drop this in your project root
+# .preflight/config.yml — copy this into your project root as .preflight/config.yml
 #
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# All fields are optional. Anything you omit uses the defaults shown below.
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
-#   "full"     — maximum detail on every non-trivial prompt
+# Profile controls how aggressively preflight checks your prompts.
+#   minimal  — only catches extremely vague prompts
+#   standard — balanced (default)
+#   full     — checks everything, including commit messages and formatting tasks
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
+# Related projects for cross-service contract awareness.
+# Preflight indexes their types, interfaces, routes, and schemas so it can
+# warn you when a change in one project might break another.
 related_projects:
-  - path: /Users/you/code/auth-service
-    alias: auth
-  - path: /Users/you/code/billing-api
-    alias: billing
-  - path: /Users/you/code/shared-types
-    alias: types
+  - path: ../my-api
+    alias: api
+  - path: ../my-shared-lib
+    alias: shared
 
-# Behavioral thresholds — tune these to your workflow
+# Tuning knobs
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Minutes before a session is considered stale (triggers re-onboarding hint)
+  session_stale_minutes: 30
+  # Tool calls before preflight suggests a checkpoint/commit
+  max_tool_calls_before_checkpoint: 100
+  # How many times a correction pattern must repeat before preflight warns
+  correction_pattern_threshold: 3
 
 # Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+#   local  — runs Xenova/all-MiniLM-L6-v2 locally, no API key needed (~90 MB first download)
+#   openai — uses OpenAI text-embedding-3-small (needs OPENAI_API_KEY env var)
 embeddings:
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+  # openai_api_key: sk-...  # or set OPENAI_API_KEY in your environment

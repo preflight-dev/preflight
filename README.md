@@ -491,6 +491,8 @@ This prevents the common failure mode: changing a shared type in one service and
 
 Drop this in your project root. Every field is optional — defaults are sensible.
 
+> **Quick start:** Copy the annotated examples from [`examples/.preflight/`](examples/.preflight/) into your project root and customize.
+
 ```yaml
 # Profile controls overall verbosity
 # "minimal" — only flag ambiguous+, skip clarification detail
