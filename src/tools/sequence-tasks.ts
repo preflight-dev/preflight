@@ -1,7 +1,7 @@
 // CATEGORY 6: sequence_tasks — Sequencing
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, shell } from "../lib/git.js";
 import { now } from "../lib/state.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { existsSync } from "fs";
@@ -90,7 +90,8 @@ export function registerSequenceTasks(server: McpServer): void {
       // For locality: infer directories from path-like tokens in task text
       if (strategy === "locality") {
         // Use git ls-files with a depth limit instead of find for performance
-        const gitFiles = run("git ls-files 2>/dev/null | head -1000");
+        const allFiles = run(["ls-files"]);
+        const gitFiles = allFiles.split("\n").slice(0, 1000).join("\n");
         const knownDirs = new Set<string>();
         for (const f of gitFiles.split("\n").filter(Boolean)) {
           const parts = f.split("/");
