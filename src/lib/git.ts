@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
@@ -27,6 +27,25 @@ export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {
     if (output) return output;
     if (e.code === "ENOENT") return "[git not found]";
     return `[command failed: git ${args.join(" ")} (exit ${e.status ?? "?"})]`;
+  }
+}
+
+/**
+ * Run a shell command string (supports pipes, redirects, &&, ||).
+ * Use for non-git commands or git commands that need shell features.
+ * Returns stdout on success, empty string on failure.
+ */
+export function shell(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    return "";
   }
 }
 
