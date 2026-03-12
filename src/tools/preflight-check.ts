@@ -18,7 +18,7 @@ import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patter
 // ---------------------------------------------------------------------------
 
 /** Extract file paths from prompt text */
-function extractFilePaths(prompt: string): string[] {
+export function extractFilePaths(prompt: string): string[] {
   const matches = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
   return [...new Set(matches)];
 }
@@ -117,7 +117,7 @@ function buildClarifySection(prompt: string): string[] {
 }
 
 /** Build scope section for multi-step */
-function buildScopeSection(prompt: string): string[] {
+export function buildScopeSection(prompt: string): string[] {
   const sections: string[] = [];
   const filePaths = extractFilePaths(prompt);
   const fileVerification = verifyFiles(filePaths);
@@ -136,7 +136,7 @@ function buildScopeSection(prompt: string): string[] {
 }
 
 /** Build sequence section for multi-step */
-function buildSequenceSection(prompt: string): string[] {
+export function buildSequenceSection(prompt: string): string[] {
   // Split prompt into sub-tasks
   const subtasks: string[] = [];
 
