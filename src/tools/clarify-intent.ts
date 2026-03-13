@@ -49,13 +49,13 @@ function getTestFailures(): string {
 }
 
 /** Extract intent signals using weighted pattern matching */
-function extractSignals(msg: string, context: { hasTypeErrors: boolean; hasTestFailures: boolean; hasDirtyFiles: boolean }): string[] {
+export function extractSignals(msg: string, context: { hasTypeErrors: boolean; hasTestFailures: boolean; hasDirtyFiles: boolean }): string[] {
   const signals: string[] = [];
   const lower = msg.toLowerCase();
 
   const patterns: [RegExp, string, number][] = [
     [/\b(fix|repair|broken|failing|error|bug|crash|issue)\b/, "FIX", 2],
-    [/\b(test|spec|suite|playwright|jest|vitest|e2e)\b/, "TESTS", 2],
+    [/\b(tests?|specs?|suite|playwright|jest|vitest|e2e)\b/, "TESTS", 2],
     [/\b(commit|push|pr|merge|rebase|cherry.?pick)\b/, "GIT", 2],
     [/\b(add|create|new|build|implement|feature)\b/, "CREATE", 1],
     [/\b(remove|delete|clean|strip|drop|deprecate)\b/, "REMOVE", 1],
