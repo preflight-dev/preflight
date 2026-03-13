@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as fs from "fs";
-import * as path from "path";
 import { findSessionDirs, findSessionFiles } from "../lib/session-parser.js";
 
 interface SessionInfo {
