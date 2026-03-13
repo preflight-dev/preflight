@@ -115,6 +115,32 @@ Add to your project's `.mcp.json`:
 
 Restart Claude Code. The tools activate automatically.
 
+### Verify it's working
+
+After setup, confirm preflight is loaded:
+
+```bash
+claude mcp list
+# Should show: preflight
+```
+
+Then open Claude Code in your project and try a deliberately vague prompt:
+
+```
+> fix the bug
+```
+
+Instead of guessing, Claude will fire `preflight_check` → `clarify_intent` and ask which bug you mean, listing recent errors or open issues it finds. That's how you know it's working.
+
+Try a well-scoped prompt for comparison:
+
+```
+> In src/auth/jwt.ts, the refreshToken function doesn't handle expired refresh tokens — 
+  add a check that throws AuthExpiredError when the refresh token's exp claim is in the past
+```
+
+This one passes triage as actionable and goes straight through. No interruption, no overhead — preflight only activates when it helps.
+
 ### Option C: npm (global)
 
 ```bash
