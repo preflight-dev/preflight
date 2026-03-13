@@ -1,5 +1,11 @@
 # Examples
 
+## [Workflow Examples](WORKFLOWS.md)
+
+Concrete before/after examples showing preflight in action — vague bug fixes, multi-step refactors, pattern warnings, session recovery, and more. Start here if you want to see what preflight actually does.
+
+---
+
 ## `.preflight/` Config Directory
 
 The `.preflight/` directory contains example configuration files you can copy into your project root:
