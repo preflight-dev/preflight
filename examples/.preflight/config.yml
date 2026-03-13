@@ -1,35 +1,44 @@
-# .preflight/config.yml — Drop this in your project root
-#
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# =============================================================================
+# .preflight/config.yml — Team-shareable preflight configuration
+# =============================================================================
+# Drop this in your project root as .preflight/config.yml
+# When present, env vars (PROMPT_DISCIPLINE_PROFILE, etc.) are ignored.
+# All fields are optional — defaults are shown below.
+# =============================================================================
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
-#   "full"     — maximum detail on every non-trivial prompt
+# Profile controls how aggressively preflight checks your prompts.
+#   minimal  — only catch the most ambiguous prompts, low friction
+#   standard — balanced (default) — catches vague prompts + cross-service issues
+#   full     — maximum checking, scorecards, cost estimates on every prompt
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
+# Related projects for cross-service contract awareness.
+# Preflight extracts types, interfaces, routes, and schemas from these
+# so it can warn you when a change in your project affects another.
 related_projects:
-  - path: /Users/you/code/auth-service
+  - path: ../auth-service
     alias: auth
-  - path: /Users/you/code/billing-api
+  - path: ../billing-api
     alias: billing
-  - path: /Users/you/code/shared-types
-    alias: types
+  # - path: ../shared-types
+  #   alias: types
 
-# Behavioral thresholds — tune these to your workflow
+# Tuning knobs for preflight behavior.
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Minutes before a session is considered "stale" and context recovery kicks in.
+  session_stale_minutes: 30
 
-# Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+  # After this many tool calls without a checkpoint, preflight nudges you
+  # to pause and verify you're still on track.
+  max_tool_calls_before_checkpoint: 100
+
+  # How many keyword matches from past corrections before preflight warns you.
+  # Lower = more warnings. Set to 1 if you keep making the same mistakes.
+  correction_pattern_threshold: 3
+
+# Embedding configuration for session search (search_sessions tool).
 embeddings:
+  # "local" — uses built-in embeddings, no API key needed (default)
+  # "openai" — uses OpenAI text-embedding-3-small for higher quality search
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+  # openai_api_key: sk-...  # Or set OPENAI_API_KEY env var before switching to openai

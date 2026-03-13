@@ -1,45 +1,54 @@
-# .preflight/triage.yml — Controls how preflight classifies your prompts
-#
-# The triage engine routes prompts into categories:
-#   TRIVIAL       → pass through (commit, format, lint)
-#   CLEAR         → well-specified, no intervention needed
-#   AMBIGUOUS     → needs clarification before proceeding
-#   MULTI-STEP    → complex task, preflight suggests a plan
-#   CROSS-SERVICE → touches multiple projects, pulls in contracts
-#
-# Customize the keywords below to match your domain.
+# =============================================================================
+# .preflight/triage.yml — Customize how prompts get classified
+# =============================================================================
+# Controls which prompts trigger checks and which pass through.
+# Tune this per-project: a payments service needs stricter rules than a blog.
+# =============================================================================
+
+# Strictness level for the triage engine.
+#   relaxed  — only flag very short/vague prompts, trust the developer more
+#   standard — balanced heuristics (default)
+#   strict   — flag anything without explicit file refs or clear scope
+strictness: standard
 
 rules:
-  # Prompts containing these words are always flagged as AMBIGUOUS.
-  # Add domain-specific terms that tend to produce vague prompts.
+  # Keywords that ALWAYS trigger ambiguity checks, even if the prompt looks clear.
+  # Use this for dangerous areas of your codebase where you want forced clarity.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    - pricing          # example: your billing domain
-    - onboarding       # example: multi-step user flows
+    - billing
+    - delete
+    # Add your project's sensitive areas:
+    # - payments
+    # - user-data
+    # - deploy
 
-  # Prompts containing these words skip checks entirely (TRIVIAL).
-  # These are safe, mechanical tasks that don't need guardrails.
+  # Keywords that skip all checks — these are quick, safe commands.
+  # Preflight passes them through with zero overhead.
   skip:
     - commit
     - format
     - lint
-    - prettier
-    - "git push"
+    - status
+    - log
+    - help
+    # Add your own safe commands:
+    # - test
+    # - build
 
-  # Prompts containing these words trigger CROSS-SERVICE classification.
-  # Preflight will search related_projects for relevant types and routes.
+  # Keywords that trigger cross-service contract search.
+  # When detected, preflight pulls types/interfaces from related_projects
+  # to show you what might break across service boundaries.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - billing          # matches the related_project alias
-
-# How aggressively to classify prompts.
-#   "relaxed"  — more prompts pass as clear (experienced users)
-#   "standard" — balanced (default)
-#   "strict"   — more prompts flagged as ambiguous (new teams, complex codebases)
-strictness: standard
+    - shared
+    # Add your inter-service touchpoints:
+    # - queue
+    # - pubsub
+    # - grpc

@@ -12,7 +12,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
+[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Workflow Examples](examples/WORKFLOWS.md) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
 </div>
 
