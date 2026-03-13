@@ -1,5 +1,11 @@
 # Examples
 
+## [Workflow Examples](WORKFLOWS.md)
+
+Real-world usage patterns showing how preflight tools chain together — vague bug fixes, multi-file refactors, pre-commit checks, onboarding, cost tracking, and more.
+
+---
+
 ## `.preflight/` Config Directory
 
 The `.preflight/` directory contains example configuration files you can copy into your project root:
