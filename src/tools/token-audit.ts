@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
-import { loadState, saveState, now, STATE_DIR } from "../lib/state.js";
+import { saveState, now, STATE_DIR } from "../lib/state.js";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
 
