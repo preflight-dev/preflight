@@ -8,6 +8,68 @@ import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+
+// ---------------------------------------------------------------------------
+// CLI flags: --help, --version, --profile, --config
+// ---------------------------------------------------------------------------
+const { values: flags } = parseArgs({
+  options: {
+    help:    { type: "boolean", short: "h", default: false },
+    version: { type: "boolean", short: "v", default: false },
+    profile: { type: "string",  short: "p" },
+    config:  { type: "boolean", short: "c", default: false },
+  },
+  strict: false,
+});
+
+if (flags.help) {
+  console.log(`
+✈️  preflight-dev — MCP server setup for Claude Code
+
+Usage:
+  preflight-dev              Interactive setup wizard
+  preflight-dev --help       Show this help
+  preflight-dev --version    Print version
+
+Options:
+  -p, --profile <name>   Skip prompt — use minimal, standard, or full
+  -c, --config           Auto-create .preflight/ directory with templates
+  -h, --help             Show this help message
+  -v, --version          Print version and exit
+
+Profiles:
+  minimal    4 tools  — clarify_intent, check_session_health, session_stats, prompt_score
+  standard   16 tools — all prompt discipline + session_stats + prompt_score
+  full       20 tools — everything + timeline/vector search (needs LanceDB)
+
+Examples:
+  preflight-dev                      # Interactive wizard
+  preflight-dev -p standard -c       # Non-interactive: standard profile + .preflight/ config
+  npx preflight-dev-serve            # Start the MCP server (used by .mcp.json)
+
+Docs: https://github.com/TerminalGravity/preflight
+`);
+  process.exit(0);
+}
+
+if (flags.version) {
+  const currentFile = fileURLToPath(import.meta.url);
+  const pkgPath = join(dirname(dirname(currentFile)), "package.json");
+  try {
+    const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+    console.log(pkg.version);
+  } catch {
+    // Fallback: try the repo-root package.json (when running from dist/)
+    try {
+      const rootPkg = JSON.parse(await readFile(join(dirname(dirname(dirname(currentFile))), "package.json"), "utf-8"));
+      console.log(rootPkg.version);
+    } catch {
+      console.log("unknown");
+    }
+  }
+  process.exit(0);
+}
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -68,22 +130,36 @@ async function main(): Promise<void> {
     console.log("Creating new .mcp.json\n");
   }
 
-  console.log("Choose a profile:\n");
-  console.log("  1) minimal  — 4 tools: clarify_intent, check_session_health, session_stats, prompt_score");
-  console.log("  2) standard — 16 tools: all prompt discipline + session_stats + prompt_score");
-  console.log("  3) full     — 20 tools: everything + timeline/vector search (needs LanceDB)\n");
+  let profile: string;
 
-  const choice = await ask("Profile [1/2/3] (default: 2): ");
-  const profileMap: Record<string, string> = { "1": "minimal", "2": "standard", "3": "full" };
-  const profile = profileMap[choice.trim()] || "standard";
+  // Non-interactive mode when --profile is passed
+  if (flags.profile) {
+    const valid = ["minimal", "standard", "full"];
+    profile = valid.includes(flags.profile as string) ? (flags.profile as string) : "standard";
+    console.log(`Using profile: ${profile}\n`);
+  } else {
+    console.log("Choose a profile:\n");
+    console.log("  1) minimal  — 4 tools: clarify_intent, check_session_health, session_stats, prompt_score");
+    console.log("  2) standard — 16 tools: all prompt discipline + session_stats + prompt_score");
+    console.log("  3) full     — 20 tools: everything + timeline/vector search (needs LanceDB)\n");
 
-  // Ask about creating .preflight/ directory
-  console.log("\nPreflight can use either environment variables or a .preflight/ directory for configuration.");
-  console.log("The .preflight/ directory allows you to configure related projects, custom triage rules, and thresholds.\n");
-  
-  const createConfig = await ask("Create .preflight/ directory with template config? [y/N]: ");
-  if (createConfig.trim().toLowerCase() === "y" || createConfig.trim().toLowerCase() === "yes") {
+    const choice = await ask("Profile [1/2/3] (default: 2): ");
+    const profileMap: Record<string, string> = { "1": "minimal", "2": "standard", "3": "full" };
+    profile = profileMap[choice.trim()] || "standard";
+  }
+
+  // .preflight/ config directory
+  if (flags.config) {
     await createPreflightConfig();
+  } else if (!flags.profile) {
+    // Only ask interactively if not in non-interactive mode
+    console.log("\nPreflight can use either environment variables or a .preflight/ directory for configuration.");
+    console.log("The .preflight/ directory allows you to configure related projects, custom triage rules, and thresholds.\n");
+    
+    const createConfig = await ask("Create .preflight/ directory with template config? [y/N]: ");
+    if (createConfig.trim().toLowerCase() === "y" || createConfig.trim().toLowerCase() === "yes") {
+      await createPreflightConfig();
+    }
   }
 
   const env: Record<string, string> = {
