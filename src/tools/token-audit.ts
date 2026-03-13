@@ -1,9 +1,9 @@
 // CATEGORY 5: token_audit — Token Efficiency
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, shell } from "../lib/git.js";
 import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
-import { loadState, saveState, now, STATE_DIR } from "../lib/state.js";
+import { saveState, now, STATE_DIR } from "../lib/state.js";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
 
@@ -39,8 +39,8 @@ export function registerTokenAudit(server: McpServer): void {
       let wasteScore = 0;
 
       // 1. Git diff size & dirty file count
-      const diffStat = run("git diff --stat --no-color 2>/dev/null");
-      const dirtyFiles = run("git diff --name-only 2>/dev/null");
+      const diffStat = run(["diff", "--stat", "--no-color"]);
+      const dirtyFiles = run(["diff", "--name-only"]);
       const dirtyList = dirtyFiles.split("\n").filter(Boolean);
       const dirtyCount = dirtyList.length;
 
@@ -63,7 +63,7 @@ export function registerTokenAudit(server: McpServer): void {
 
       for (const f of dirtyList.slice(0, 30)) {
         // Use shell-safe quoting instead of interpolation
-        const wc = run(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
+        const wc = shell(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
         const lines = parseInt(wc) || 0;
         estimatedContextTokens += lines * AVG_LINE_BYTES * AVG_TOKENS_PER_BYTE;
         if (lines > 500) {
@@ -80,7 +80,7 @@ export function registerTokenAudit(server: McpServer): void {
       // 3. CLAUDE.md bloat check
       const claudeMd = readIfExists("CLAUDE.md", 1);
       if (claudeMd !== null) {
-        const stat = run(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
+        const stat = shell(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
         const bytes = parseInt(stat) || 0;
         if (bytes > 5120) {
           patterns.push(`CLAUDE.md is ${(bytes / 1024).toFixed(1)}KB — injected every session, burns tokens on paste`);
@@ -139,7 +139,7 @@ export function registerTokenAudit(server: McpServer): void {
             // Read with size cap: take the tail if too large
             const raw = stat.size <= MAX_TOOL_LOG_BYTES
               ? readFileSync(toolLogPath, "utf-8")
-              : run(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
+              : shell(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
 
             const lines = raw.trim().split("\n").filter(Boolean);
             totalToolCalls = lines.length;
