@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
@@ -661,6 +661,16 @@ node --version
 ```
 
 On Apple Silicon Macs, make sure you're running a native arm64 Node — not Rosetta. Check with `node -e "console.log(process.arch)"` (should print `arm64`).
+
+### Crashes or syntax errors on Node 18 or 19
+
+Preflight requires **Node 20+**. On Node 18/19 you may see cryptic errors like `SyntaxError: Unexpected token` or failed native module loads because preflight uses Node 20 features (built-in `fetch`, `import.meta.resolve`, native test runner in CI). Check your version:
+
+```bash
+node --version   # Must be v20.x or higher
+```
+
+If you're on 18, upgrade via [nvm](https://github.com/nvm-sh/nvm): `nvm install 20 && nvm use 20`.
 
 ### First run is slow (~90MB model download)
 
