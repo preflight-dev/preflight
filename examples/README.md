@@ -1,5 +1,11 @@
 # Examples
 
+## [Workflow Examples](./WORKFLOWS.md)
+
+See real-world examples of preflight catching vague prompts, planning multi-step tasks, detecting cross-service impacts, and learning from correction patterns.
+
+---
+
 ## `.preflight/` Config Directory
 
 The `.preflight/` directory contains example configuration files you can copy into your project root:
