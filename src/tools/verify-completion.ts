@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getStatus } from "../lib/git.js";
+import { run, getStatus, shell } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 /** Detect package manager from lockfiles */
@@ -34,7 +34,9 @@ function detectTestRunner(): string | null {
 /** Check if a build script exists in package.json */
 function hasBuildScript(): boolean {
   try {
-    const pkg = JSON.parse(run("cat package.json 2>/dev/null"));
+    const pkgPath = join(PROJECT_DIR, "package.json");
+    if (!existsSync(pkgPath)) return false;
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     return !!pkg?.scripts?.build;
   } catch { return false; }
 }
@@ -55,7 +57,7 @@ export function registerVerifyCompletion(server: McpServer): void {
       const checks: { name: string; passed: boolean; detail: string }[] = [];
 
       // 1. Type check (single invocation, extract both result and count)
-      const tscOutput = run(`${pm === "npx" ? "npx" : pm} tsc --noEmit 2>&1 | tail -20`);
+      const tscOutput = shell(`${pm === "npx" ? "npx" : pm} tsc --noEmit 2>&1 | tail -20`);
       const errorLines = tscOutput.split("\n").filter(l => /error TS\d+/.test(l));
       const typePassed = errorLines.length === 0;
       checks.push({
@@ -80,7 +82,7 @@ export function registerVerifyCompletion(server: McpServer): void {
       // 3. Tests
       if (!skip_tests) {
         const runner = detectTestRunner();
-        const changedFiles = run("git diff --name-only HEAD~1 2>/dev/null").split("\n").filter(Boolean);
+        const changedFiles = run(["diff", "--name-only", "HEAD~1"]).split("\n").filter(Boolean);
         let testCmd = "";
 
         if (runner === "playwright") {
@@ -112,7 +114,7 @@ export function registerVerifyCompletion(server: McpServer): void {
         }
 
         if (testCmd) {
-          const testResult = run(testCmd, { timeout: 120000 });
+          const testResult = shell(testCmd, { timeout: 120000 });
           const testPassed = /pass/i.test(testResult) && !/fail/i.test(testResult);
           checks.push({
             name: "Tests",
@@ -130,7 +132,7 @@ export function registerVerifyCompletion(server: McpServer): void {
 
       // 4. Build check (only if build script exists and not skipped)
       if (!skip_build && hasBuildScript()) {
-        const buildCheck = run(`${pm === "npx" ? "npm run" : pm} build 2>&1 | tail -10`, { timeout: 60000 });
+        const buildCheck = shell(`${pm === "npx" ? "npm run" : pm} build 2>&1 | tail -10`, { timeout: 60000 });
         const buildPassed = !/\b[Ee]rror\b/.test(buildCheck) || /Successfully compiled/.test(buildCheck);
         checks.push({
           name: "Build",
