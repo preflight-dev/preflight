@@ -40,7 +40,7 @@ interface ScoreResult {
   feedback: string[];
 }
 
-function scorePrompt(text: string): ScoreResult {
+export function scorePrompt(text: string): ScoreResult {
   const feedback: string[] = [];
   let specificity: number;
   let scope: number;
@@ -59,11 +59,19 @@ function scorePrompt(text: string): ScoreResult {
   }
 
   // Scope: bounded task
-  if (/\b(only|just|single|one|specific|this)\b/i.test(text) || text.length > 100) {
+  const hasBoundingWord = /\b(only|just|single|one|specific|this)\b/i.test(text);
+  const hasBroadWord = /\b(all|every|entire|whole)\b/i.test(text);
+  if (hasBoundingWord && !hasBroadWord) {
     scope = 25;
-  } else if (/\b(all|every|entire|whole)\b/i.test(text)) {
+  } else if (hasBoundingWord && hasBroadWord) {
+    scope = 20;
+    feedback.push("🎯 Mixed scope signals — try narrowing the 'all/every' parts");
+  } else if (hasBroadWord) {
     scope = 10;
     feedback.push("🎯 'All/every' is broad — can you narrow the scope?");
+  } else if (text.length > 150 && /\b(file|function|component|step)\b/i.test(text)) {
+    // Long prompt with structural references suggests well-scoped
+    scope = 20;
   } else {
     scope = 10;
     feedback.push("🎯 Scope unclear — how much should change?");
