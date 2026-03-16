@@ -30,15 +30,18 @@ export function registerOnboardProject(server: McpServer) {
     "Index a project's Claude Code sessions and git history into the timeline database for semantic search and chronological viewing.",
     {
       project_dir: z.string().describe("Absolute path to the project directory"),
-      embedding_provider: z.enum(["local", "openai"]).default("local"),
+      embedding_provider: z.enum(["local", "openai", "ollama"]).default("local"),
       openai_api_key: z.string().optional(),
+      ollama_base_url: z.string().optional().describe("Ollama server URL (default: http://localhost:11434)"),
+      ollama_model: z.string().optional().describe("Ollama embedding model (default: nomic-embed-text)"),
+      ollama_dimensions: z.number().optional().describe("Embedding dimensions for the Ollama model"),
       git_depth: z.enum(["all", "6months", "1year", "3months"]).default("all"),
       git_since: z.string().optional().describe("Override git_depth with exact start date (ISO: '2025-08-01')"),
       git_authors: z.array(z.string()).optional().describe("Filter git commits to these authors. If omitted, auto-detects the primary author (most commits)."),
       reindex: z.boolean().default(false).describe("If true, drop existing data and rebuild from scratch"),
     },
     async (params) => {
-      const { project_dir, embedding_provider, openai_api_key, git_depth, git_since, git_authors, reindex } = params;
+      const { project_dir, embedding_provider, openai_api_key, ollama_base_url, ollama_model, ollama_dimensions, git_depth, git_since, git_authors, reindex } = params;
 
       // 1. Validate project_dir
       if (!fs.existsSync(project_dir)) {
@@ -174,6 +177,9 @@ export function registerOnboardProject(server: McpServer) {
       const embedder = createEmbeddingProvider({
         provider: embedding_provider,
         apiKey: openai_api_key,
+        ollamaBaseUrl: ollama_base_url,
+        ollamaModel: ollama_model,
+        ollamaDimensions: ollama_dimensions,
       });
 
       const BATCH_SIZE = 50;
