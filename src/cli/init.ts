@@ -44,6 +44,46 @@ async function createPreflightConfig(): Promise<void> {
   }
 }
 
+/** Inject preflight rules into CLAUDE.md */
+async function injectClaudeRules(mode: "strict" | "relaxed"): Promise<void> {
+  const claudePath = join(process.cwd(), "CLAUDE.md");
+  const rulesDir = join(process.cwd(), ".claude");
+  const rulesPath = join(rulesDir, "preflight-rules.md");
+
+  try {
+    // Get the template
+    const currentFile = fileURLToPath(import.meta.url);
+    const srcDir = dirname(dirname(currentFile));
+    const templatesDir = join(srcDir, "templates");
+    const templateFile = join(templatesDir, `claude-rules-${mode}.md`);
+    const rules = await readFile(templateFile, "utf-8");
+
+    // Write rules to .claude/preflight-rules.md
+    await mkdir(rulesDir, { recursive: true });
+    await writeFile(rulesPath, rules);
+    console.log(`✅ Created .claude/preflight-rules.md (${mode} mode)`);
+
+    // Check if CLAUDE.md exists and already imports the rules
+    const importLine = `@.claude/preflight-rules.md`;
+    let claudeContent = "";
+    try {
+      claudeContent = await readFile(claudePath, "utf-8");
+    } catch { /* file doesn't exist yet */ }
+
+    if (claudeContent.includes(importLine)) {
+      console.log("   CLAUDE.md already imports preflight rules\n");
+      return;
+    }
+
+    // Append import to CLAUDE.md
+    const separator = claudeContent.length > 0 ? "\n\n" : "";
+    await writeFile(claudePath, claudeContent + separator + importLine + "\n");
+    console.log("   Added import to CLAUDE.md\n");
+  } catch (error) {
+    console.error(`❌ Failed to inject CLAUDE.md rules: ${error}\n`);
+  }
+}
+
 interface McpConfig {
   mcpServers: Record<string, {
     command: string;
@@ -84,6 +124,16 @@ async function main(): Promise<void> {
   const createConfig = await ask("Create .preflight/ directory with template config? [y/N]: ");
   if (createConfig.trim().toLowerCase() === "y" || createConfig.trim().toLowerCase() === "yes") {
     await createPreflightConfig();
+  }
+
+  // Ask about CLAUDE.md rules
+  console.log("Preflight can inject rules into CLAUDE.md so Claude Code automatically");
+  console.log("uses preflight tools at the right moments.\n");
+  
+  const rulesChoice = await ask("Add preflight rules to CLAUDE.md? [strict/relaxed/N] (default: N): ");
+  const rulesMode = rulesChoice.trim().toLowerCase();
+  if (rulesMode === "strict" || rulesMode === "relaxed") {
+    await injectClaudeRules(rulesMode);
   }
 
   const env: Record<string, string> = {
