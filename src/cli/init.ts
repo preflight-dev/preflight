@@ -27,10 +27,12 @@ async function createPreflightConfig(): Promise<void> {
   try {
     await mkdir(preflightDir, { recursive: true });
     
-    // Get the current module's directory to find templates
+    // Get the current module's directory to find templates.
+    // At runtime this file is dist/cli/init.js — go up twice to reach the
+    // package root, then into src/templates/ (which ships in the npm tarball).
     const currentFile = fileURLToPath(import.meta.url);
-    const srcDir = dirname(dirname(currentFile)); // Go up from cli/ to src/
-    const templatesDir = join(srcDir, "templates");
+    const packageRoot = dirname(dirname(dirname(currentFile))); // dist/cli/ → dist/ → root
+    const templatesDir = join(packageRoot, "src", "templates");
     
     // Copy template files
     await copyFile(join(templatesDir, "config.yml"), join(preflightDir, "config.yml"));
