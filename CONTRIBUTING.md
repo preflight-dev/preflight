@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This guide will help you get started.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm
 
 ## Setup
