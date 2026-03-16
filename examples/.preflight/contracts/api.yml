@@ -1,17 +1,15 @@
-# .preflight/contracts/api.yml — Manual contract definitions
+# .preflight/contracts/api.yml — Manual contract definitions.
 #
-# Define shared types and interfaces that preflight should know about.
-# These supplement auto-extracted contracts from your codebase.
-# Manual definitions win on name conflicts with auto-extracted ones.
+# These supplement auto-extraction. Use them when:
+# - A related service isn't in TypeScript (preflight can't auto-extract)
+# - You want to pin a specific contract shape for stability
+# - You're documenting an external API your project depends on
 #
-# Why manual contracts?
-#   - Document cross-service interfaces that live in docs, not code
-#   - Define contracts for external APIs your services consume
-#   - Pin down types that are implicit (e.g., event payloads)
+# Preflight uses these to warn when a prompt might affect shared types.
 
 - name: User
   kind: interface
-  description: Core user model shared across all services
+  description: Core user object shared between frontend and API
   fields:
     - name: id
       type: string
@@ -19,40 +17,29 @@
     - name: email
       type: string
       required: true
-    - name: tier
-      type: "'free' | 'pro' | 'enterprise'"
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
       required: true
     - name: createdAt
       type: Date
       required: true
 
-- name: AuthToken
+- name: ApiResponse
   kind: interface
-  description: JWT payload structure from auth-service
+  description: Standard API response envelope
   fields:
-    - name: userId
-      type: string
-      required: true
-    - name: permissions
-      type: string[]
-      required: true
-    - name: expiresAt
-      type: number
-      required: true
-
-- name: WebhookPayload
-  kind: interface
-  description: Standard webhook envelope for inter-service events
-  fields:
-    - name: event
-      type: string
-      required: true
-    - name: timestamp
-      type: string
+    - name: success
+      type: boolean
       required: true
     - name: data
-      type: Record<string, unknown>
-      required: true
-    - name: source
+      type: T
+      required: false
+    - name: error
       type: string
-      required: true
+      required: false
+
+# Add your own shared types below:
+# - name: OrderStatus
+#   kind: enum
+#   description: Order lifecycle states
+#   values: [pending, confirmed, shipped, delivered, cancelled]

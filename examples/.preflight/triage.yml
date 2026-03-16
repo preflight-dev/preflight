@@ -1,45 +1,43 @@
-# .preflight/triage.yml — Controls how preflight classifies your prompts
-#
-# The triage engine routes prompts into categories:
-#   TRIVIAL       → pass through (commit, format, lint)
-#   CLEAR         → well-specified, no intervention needed
-#   AMBIGUOUS     → needs clarification before proceeding
-#   MULTI-STEP    → complex task, preflight suggests a plan
-#   CROSS-SERVICE → touches multiple projects, pulls in contracts
-#
-# Customize the keywords below to match your domain.
+# .preflight/triage.yml — Controls how preflight classifies your prompts.
+# Customize these rules to match your project's domain vocabulary.
 
 rules:
-  # Prompts containing these words are always flagged as AMBIGUOUS.
-  # Add domain-specific terms that tend to produce vague prompts.
+  # Prompts containing these keywords are always flagged as AMBIGUOUS or higher.
+  # Add domain-specific terms that tend to produce vague requests.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    - pricing          # example: your billing domain
-    - onboarding       # example: multi-step user flows
+    # Add your own:
+    # - billing
+    # - deployment
+    # - auth
 
-  # Prompts containing these words skip checks entirely (TRIVIAL).
-  # These are safe, mechanical tasks that don't need guardrails.
+  # Prompts containing these keywords pass through as TRIVIAL.
+  # These are routine commands where clarification adds no value.
   skip:
     - commit
     - format
     - lint
-    - prettier
-    - "git push"
+    # Add your own:
+    # - typecheck
+    # - "git status"
 
-  # Prompts containing these words trigger CROSS-SERVICE classification.
-  # Preflight will search related_projects for relevant types and routes.
+  # Prompts containing these keywords trigger CROSS-SERVICE checks.
+  # These scan related_projects (from config.yml) for shared contracts.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - billing          # matches the related_project alias
+    # Add your own:
+    # - graphql
+    # - grpc
+    # - queue
 
 # How aggressively to classify prompts.
-#   "relaxed"  — more prompts pass as clear (experienced users)
+#   "relaxed"  — more prompts pass as clear (less interruption)
 #   "standard" — balanced (default)
-#   "strict"   — more prompts flagged as ambiguous (new teams, complex codebases)
+#   "strict"   — more prompts flagged as ambiguous (maximum savings)
 strictness: standard
