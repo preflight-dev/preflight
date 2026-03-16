@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
@@ -769,6 +769,16 @@ flowchart TB
 ---
 
 ## Troubleshooting
+
+### Crashes or syntax errors on startup (Node version)
+
+Preflight requires **Node.js 20+**. On Node 18 you'll get cryptic errors — usually syntax failures from unsupported language features or missing `node:` built-in imports. Check with:
+
+```bash
+node --version   # must be v20.x or higher
+```
+
+If you're on 18, upgrade via [nvm](https://github.com/nvm-sh/nvm), [fnm](https://github.com/Schniz/fnm), or your package manager. Node 18 reached EOL in April 2025.
 
 ### "Cannot find module 'vectordb'" or LanceDB import errors
 
