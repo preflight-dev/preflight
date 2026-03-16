@@ -1,5 +1,18 @@
 # Examples
 
+## `CLAUDE.md` — Project Instructions with Preflight
+
+The [`CLAUDE.md`](CLAUDE.md) example shows how to set up your project instructions so Claude Code automatically uses preflight on every prompt. Copy it to your project root and customize:
+
+```bash
+cp /path/to/preflight/examples/CLAUDE.md ./CLAUDE.md
+```
+
+Key things it demonstrates:
+- Telling Claude to run `preflight_check` before starting work
+- Documenting your stack, conventions, and fragile areas
+- Keeping it under 5KB to avoid token bloat (preflight's `token_audit` will warn you if it gets too big)
+
 ## `.preflight/` Config Directory
 
 The `.preflight/` directory contains example configuration files you can copy into your project root:
