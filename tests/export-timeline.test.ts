@@ -168,4 +168,49 @@ describe("export_timeline", () => {
     });
     expect(result.content[0].text).toContain("No projects found");
   });
+
+  it("generates a JSON report with structured data", async () => {
+    const result = await callTool({
+      scope: "current",
+      format: "json",
+      type: "all",
+      limit: 500,
+      offset: 0,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.stats.totalEvents).toBe(5);
+    expect(parsed.events).toHaveLength(5);
+    expect(parsed.events[0]).toHaveProperty("timestamp");
+    expect(parsed.events[0]).toHaveProperty("type");
+    expect(parsed.stats.byType).toHaveProperty("prompt");
+    expect(parsed.period).toHaveProperty("from");
+    expect(parsed.period).toHaveProperty("to");
+  });
+
+  it("includes commit hash and tool name in JSON events", async () => {
+    const result = await callTool({
+      scope: "current",
+      format: "json",
+      type: "all",
+      limit: 500,
+      offset: 0,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    const commit = parsed.events.find((e: any) => e.type === "commit");
+    expect(commit.commitHash).toBe("abc1234def");
+    const toolCall = parsed.events.find((e: any) => e.type === "tool_call");
+    expect(toolCall.toolName).toBe("Read");
+  });
+
+  it("rejects save_to paths that escape project root", async () => {
+    const result = await callTool({
+      scope: "current",
+      format: "detailed",
+      type: "all",
+      limit: 500,
+      offset: 0,
+      save_to: "../../../etc/passwd",
+    });
+    expect(result.content[0].text).toContain("resolves outside the project root");
+  });
 });
