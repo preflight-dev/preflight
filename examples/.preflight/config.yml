@@ -1,35 +1,46 @@
-# .preflight/config.yml — Drop this in your project root
-#
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# .preflight/config.yml — Drop this in your project root.
+# Every field is optional. Preflight works out of the box with sensible defaults.
+# Commit this to your repo so your whole team gets the same behavior.
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
+# Profile controls how much detail preflight surfaces.
+#   "minimal"  — only flag ambiguous+, skip clarification detail
 #   "standard" — balanced (default)
 #   "full"     — maximum detail on every non-trivial prompt
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
+# Related projects for cross-service contract awareness.
+# Preflight scans these for shared types, interfaces, and API routes
+# so it can warn when a change in one project might break another.
 related_projects:
-  - path: /Users/you/code/auth-service
-    alias: auth
-  - path: /Users/you/code/billing-api
-    alias: billing
-  - path: /Users/you/code/shared-types
-    alias: types
+  # Example: a backend API that your frontend talks to
+  # - path: /Users/you/projects/my-api
+  #   alias: api
 
-# Behavioral thresholds — tune these to your workflow
+  # Example: a shared types package
+  # - path: /Users/you/projects/shared-types
+  #   alias: shared
+
+# Behavioral thresholds — tune these to your workflow.
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Warn if no session activity for this many minutes
+  session_stale_minutes: 30
 
-# Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+  # Suggest a checkpoint after this many tool calls in one session
+  max_tool_calls_before_checkpoint: 100
+
+  # Minimum correction occurrences before flagging as a pattern
+  # (e.g., if you keep correcting "use the auth module" 3+ times,
+  # preflight learns to warn you proactively)
+  correction_pattern_threshold: 3
+
+# Embedding configuration for vector search (timeline tools).
+# Local embeddings work offline with no API key — they just need
+# a one-time ~90MB model download on first use.
 embeddings:
+  # "local" — Xenova/all-MiniLM-L6-v2, runs on-device, no API key needed
+  # "openai" — OpenAI text-embedding-3-small, needs OPENAI_API_KEY
+  # "ollama" — Local Ollama server, needs `ollama serve` running
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+
+  # Only needed if provider is "openai":
+  # openai_api_key: sk-...
