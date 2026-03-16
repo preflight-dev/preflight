@@ -74,6 +74,129 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ---
 
+## Usage Walkthrough
+
+Here's what preflight actually looks like in practice — real tool calls with realistic output.
+
+### 1. Vague prompt → automatic clarification
+
+You type into Claude Code:
+
+```
+> update the dashboard
+```
+
+Claude calls `preflight_check` with `{ "prompt": "update the dashboard" }`. Triage classifies this as **ambiguous** (< 50 chars, no file refs). You get back:
+
+```
+⚠️ AMBIGUOUS — needs clarification before proceeding
+
+📂 Git State:
+  Branch: feat/analytics
+  3 uncommitted files: src/components/Dashboard.tsx, src/hooks/useDashboard.ts, src/api/metrics.ts
+
+🔍 Ambiguity Signals:
+  - "update" is vague — add data? change layout? fix a bug? restyle?
+  - "dashboard" matches 4 files across the project
+  - No specific file path or line number referenced
+
+💡 Try something like:
+  - "add the new revenue chart to src/components/Dashboard.tsx using the metrics API from src/api/metrics.ts"
+  - "fix the loading spinner that won't dismiss in the analytics dashboard"
+  - "update dashboard layout to 3-column grid per the Figma mock"
+```
+
+### 2. Multi-step task → scoped execution plan
+
+```
+> refactor the payments module to support Stripe and add webhook handling
+```
+
+Triage: **multi-step** (multiple verbs + cross-concern). `scope_work` and `sequence_tasks` fire automatically:
+
+```
+🔶 MULTI-STEP — breaking this down before starting
+
+📋 Execution Plan:
+  Step 1: Extract payment interface (src/payments/provider.ts)
+    → Define PaymentProvider interface with charge(), refund(), webhook()
+    → Risk: LOW — new file, no existing consumers yet
+
+  Step 2: Implement Stripe adapter (src/payments/stripe.ts)
+    → Implement PaymentProvider using stripe SDK
+    → Dependencies: stripe npm package
+    → Risk: MEDIUM — needs API keys, error handling for network failures
+
+  Step 3: Add webhook endpoint (src/api/webhooks/stripe.ts)
+    → POST /api/webhooks/stripe with signature verification
+    → Risk: HIGH — security-sensitive, needs crypto verification
+    → ⚠️ Checkpoint recommended before this step
+
+  Step 4: Update consumers (src/checkout/*, src/subscriptions/*)
+    → Swap direct calls to new PaymentProvider interface
+    → 6 files affected
+
+🧪 Suggested checkpoints: after Step 1, after Step 3
+⏱️ Estimated tokens: ~45,000 across all steps
+```
+
+### 3. Correction pattern matching
+
+You previously logged a correction with `log_correction`:
+
+```
+> log_correction: "When I said 'update types', I meant only the shared types in packages/shared, not the local type files in each service"
+```
+
+Next time you say:
+
+```
+> update the types
+```
+
+Preflight catches it:
+
+```
+⚠️ PATTERN MATCH — you've corrected this before
+
+🔄 Previous correction (2 days ago):
+  "When I said 'update types', I meant only the shared types in packages/shared,
+   not the local type files in each service"
+
+Did you mean shared types in packages/shared? If so, try:
+  "update shared types in packages/shared/types.ts"
+```
+
+### 4. Cross-service awareness
+
+```
+> add a loyalty points field to the user profile
+```
+
+Triage: **cross-service** (detected `user` + field change pattern, config has related projects). Contracts are searched:
+
+```
+🔗 CROSS-SERVICE — this change affects multiple projects
+
+📂 Current project: web-app
+  - src/types/user.ts → UserProfile interface (line 12)
+  - prisma/schema.prisma → User model (line 34)
+
+🔗 Related projects:
+  - mobile-app: src/api/types.ts → UserProfile (mirrors web-app, line 8)
+  - rewards-service: src/models/user.ts → UserRecord (includes loyalty_points already?)
+  - analytics-pipeline: src/schemas/user-events.avro → UserEvent schema
+
+⚠️ Changing UserProfile requires updates in 3 services.
+  Suggested order:
+  1. prisma/schema.prisma (source of truth) + migrate
+  2. web-app src/types/user.ts
+  3. mobile-app src/api/types.ts (notify mobile team)
+  4. analytics-pipeline schema (may need backfill)
+```
+
+---
+
 ## Quick Start
 
 ### Option A: npx (fastest — no install)
