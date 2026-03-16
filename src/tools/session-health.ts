@@ -20,6 +20,7 @@ export function registerSessionHealth(server: McpServer): void {
       stale_threshold_hours: z.number().optional().describe("Hours before a doc is considered stale. Default: 2"),
     },
     async ({ stale_threshold_hours }) => {
+      try {
       const config = getConfig();
       const staleHours = stale_threshold_hours ?? (config.thresholds.session_stale_minutes / 60);
       const branch = getBranch();
@@ -102,6 +103,15 @@ ${issues.length ? issues.join("\n") : "None — session is healthy"}
 ${recommendation}`,
         }],
       };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{
+            type: "text" as const,
+            text: `## Session Health — Error ❌\n\n**Error**: ${message}\n\nCould not determine session health. If git is unavailable or the workspace isn't a repo, this tool won't work. Try running \`git status\` manually.`,
+          }],
+        };
+      }
     }
   );
 }

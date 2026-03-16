@@ -72,6 +72,66 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
      → 4,000 tokens, done right the first time
 ```
 
+### What Tool Output Looks Like
+
+When you run `preflight_check` on a real prompt, here's what you get back:
+
+**Ambiguous prompt** — `"update the user model"`:
+
+```
+┌─ preflight_check ────────────────────────────────────────────┐
+│ Classification: ⚠️ AMBIGUOUS                                 │
+│ Confidence: 0.85                                             │
+│                                                              │
+│ Issues:                                                      │
+│  • "user model" matches 3 files: User (prisma/schema.prisma),│
+│    UserProfile (src/types/user.ts), UserDTO (src/api/types.ts)│
+│  • No indication of what fields to update or why             │
+│                                                              │
+│ Suggested clarification:                                     │
+│  "Which user model? What fields are changing?                │
+│   e.g. 'Add emailVerified boolean to the User model          │
+│   in prisma/schema.prisma and regenerate the client'"        │
+│                                                              │
+│ Correction history: You've had 2 past corrections on         │
+│ schema changes — both were missing migration steps.          │
+│ Consider including 'and create a migration' in your prompt.  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Well-specified prompt** — `"add a retryCount integer field to the Job model in prisma/schema.prisma, default 0, and create a migration"`:
+
+```
+┌─ preflight_check ────────────────────────────────────────────┐
+│ Classification: ✅ CLEAR                                     │
+│ Confidence: 0.95                                             │
+│                                                              │
+│ Scope: 1 file (prisma/schema.prisma) + migration             │
+│ Estimated tokens: ~2,000                                     │
+│ Proceeding without intervention.                             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Cross-service prompt** — `"change the webhook payload format"`:
+
+```
+┌─ preflight_check ────────────────────────────────────────────┐
+│ Classification: 🔗 CROSS-SERVICE                             │
+│                                                              │
+│ Contracts found:                                             │
+│  • WebhookPayload (src/events/types.ts)                      │
+│  • WebhookPayload consumer (auth-service/src/handlers/       │
+│    webhook.ts:42)                                            │
+│  • WebhookPayload consumer (billing-api/src/lib/events.ts:18)│
+│                                                              │
+│ ⚠️ 2 downstream consumers depend on this type.               │
+│ Changing the payload shape will break auth-service and        │
+│ billing-api unless they're updated too.                      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+These outputs appear inline in your Claude Code session — no extra windows or dashboards.
+
 ---
 
 ## Quick Start

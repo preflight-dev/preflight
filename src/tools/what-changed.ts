@@ -10,6 +10,7 @@ export function registerWhatChanged(server: McpServer): void {
       since: z.string().optional().describe("Git ref: 'HEAD~5', 'HEAD~3', etc. Default: HEAD~5"),
     },
     async ({ since }) => {
+      try {
       const ref = since || "HEAD~5";
       const diffStat = getDiffStat(ref);
       const diffFiles = run(`git diff ${ref} --name-only 2>/dev/null || git diff HEAD~3 --name-only`);
@@ -43,6 +44,15 @@ ${diffStat || "no changes"}
 \`\`\``,
         }],
       };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{
+            type: "text" as const,
+            text: `## What Changed — Error ❌\n\n**Error**: ${message}\n\nThis can happen if the git ref is invalid or the repo has too few commits. Try \`what_changed\` with \`since: "HEAD~3"\` or \`since: "HEAD~1"\`.`,
+          }],
+        };
+      }
     }
   );
 }
