@@ -7,9 +7,42 @@ import { loadState, saveState, now, STATE_DIR } from "../lib/state.js";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
 
-/** Shell-escape a filename for safe interpolation */
-function shellEscape(s: string): string {
-  return s.replace(/'/g, "'\\''");
+/** Count lines in a file using Node APIs (no shell). Returns 0 on error. */
+function countFileLines(filePath: string): number {
+  try {
+    const abs = join(PROJECT_DIR, filePath);
+    const content = readFileSync(abs, "utf-8");
+    return content.split("\n").length;
+  } catch {
+    return 0;
+  }
+}
+
+/** Get file size in bytes using Node APIs. Returns 0 on error. */
+function getFileSize(filePath: string): number {
+  try {
+    const abs = join(PROJECT_DIR, filePath);
+    return statSync(abs).size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Read the tail of a file (last N bytes). */
+function readFileTail(absPath: string, maxBytes: number): string {
+  try {
+    const stat = statSync(absPath);
+    if (stat.size <= maxBytes) {
+      return readFileSync(absPath, "utf-8");
+    }
+    const buf = Buffer.alloc(maxBytes);
+    const fd = require("fs").openSync(absPath, "r");
+    require("fs").readSync(fd, buf, 0, maxBytes, stat.size - maxBytes);
+    require("fs").closeSync(fd);
+    return buf.toString("utf-8");
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -39,8 +72,8 @@ export function registerTokenAudit(server: McpServer): void {
       let wasteScore = 0;
 
       // 1. Git diff size & dirty file count
-      const diffStat = run("git diff --stat --no-color 2>/dev/null");
-      const dirtyFiles = run("git diff --name-only 2>/dev/null");
+      const diffStat = run(["diff", "--stat", "--no-color"]);
+      const dirtyFiles = run(["diff", "--name-only"]);
       const dirtyList = dirtyFiles.split("\n").filter(Boolean);
       const dirtyCount = dirtyList.length;
 
@@ -63,8 +96,7 @@ export function registerTokenAudit(server: McpServer): void {
 
       for (const f of dirtyList.slice(0, 30)) {
         // Use shell-safe quoting instead of interpolation
-        const wc = run(`wc -l < '${shellEscape(f)}' 2>/dev/null`);
-        const lines = parseInt(wc) || 0;
+        const lines = countFileLines(f);
         estimatedContextTokens += lines * AVG_LINE_BYTES * AVG_TOKENS_PER_BYTE;
         if (lines > 500) {
           largeFiles.push(`${f} (${lines} lines)`);
@@ -80,8 +112,7 @@ export function registerTokenAudit(server: McpServer): void {
       // 3. CLAUDE.md bloat check
       const claudeMd = readIfExists("CLAUDE.md", 1);
       if (claudeMd !== null) {
-        const stat = run(`wc -c < '${shellEscape("CLAUDE.md")}' 2>/dev/null`);
-        const bytes = parseInt(stat) || 0;
+        const bytes = getFileSize("CLAUDE.md");
         if (bytes > 5120) {
           patterns.push(`CLAUDE.md is ${(bytes / 1024).toFixed(1)}KB — injected every session, burns tokens on paste`);
           recommendations.push("Trim CLAUDE.md to essentials (<5KB). Move reference docs to files read on-demand");
@@ -137,9 +168,7 @@ export function registerTokenAudit(server: McpServer): void {
             }
 
             // Read with size cap: take the tail if too large
-            const raw = stat.size <= MAX_TOOL_LOG_BYTES
-              ? readFileSync(toolLogPath, "utf-8")
-              : run(`tail -c ${MAX_TOOL_LOG_BYTES} '${shellEscape(toolLogPath)}'`);
+            const raw = readFileTail(toolLogPath, MAX_TOOL_LOG_BYTES);
 
             const lines = raw.trim().split("\n").filter(Boolean);
             totalToolCalls = lines.length;
