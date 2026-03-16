@@ -289,13 +289,18 @@ export async function insertEvents(events: TimelineEvent[], projectDir?: string)
   }
 }
 
+/** Escape a string value for use in a LanceDB SQL-like WHERE clause. */
+function escapeValue(val: string): string {
+  return val.replace(/'/g, "''");
+}
+
 function buildWhereFilter(opts: SearchOptions): string | undefined {
   const clauses: string[] = [];
-  if (opts.project) clauses.push(`project = '${opts.project}'`);
-  if (opts.branch) clauses.push(`branch = '${opts.branch}'`);
-  if (opts.type) clauses.push(`type = '${opts.type}'`);
-  if (opts.since) clauses.push(`timestamp >= '${opts.since}'`);
-  if (opts.until) clauses.push(`timestamp <= '${opts.until}'`);
+  if (opts.project) clauses.push(`project = '${escapeValue(opts.project)}'`);
+  if (opts.branch) clauses.push(`branch = '${escapeValue(opts.branch)}'`);
+  if (opts.type) clauses.push(`type = '${escapeValue(opts.type)}'`);
+  if (opts.since) clauses.push(`timestamp >= '${escapeValue(opts.since)}'`);
+  if (opts.until) clauses.push(`timestamp <= '${escapeValue(opts.until)}'`);
   return clauses.length > 0 ? clauses.join(" AND ") : undefined;
 }
 
