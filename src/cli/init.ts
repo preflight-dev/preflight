@@ -9,6 +9,97 @@ import { join, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+// ---------------------------------------------------------------------------
+// CLI flags: --help, --version, status
+// ---------------------------------------------------------------------------
+
+const args = process.argv.slice(2);
+
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+✈️  preflight-dev — Stop burning tokens on vague prompts
+
+USAGE
+  preflight-dev              Interactive setup wizard (creates .mcp.json)
+  preflight-dev status       Check if preflight is configured in this project
+  preflight-dev --version    Print version
+  preflight-dev --help       Show this help
+
+QUICK START
+  cd your-project
+  npx preflight-dev          # run the setup wizard
+  # restart Claude Code — done!
+
+ONE-LINER (skip the wizard)
+  claude mcp add preflight -- npx -y preflight-dev-serve
+
+DOCS
+  https://github.com/TerminalGravity/preflight
+`);
+  process.exit(0);
+}
+
+if (args.includes("--version") || args.includes("-v")) {
+  const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "../../package.json");
+  try {
+    const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+    console.log(`preflight-dev v${pkg.version}`);
+  } catch {
+    // Fallback when running from dist/ — package.json is one more level up
+    try {
+      const pkg2 = JSON.parse(await readFile(join(dirname(fileURLToPath(import.meta.url)), "../../../package.json"), "utf-8"));
+      console.log(`preflight-dev v${pkg2.version}`);
+    } catch {
+      console.log("preflight-dev (version unknown)");
+    }
+  }
+  process.exit(0);
+}
+
+if (args[0] === "status") {
+  const mcpPath = join(process.cwd(), ".mcp.json");
+  const preflightDir = join(process.cwd(), ".preflight");
+
+  console.log("\n✈️  preflight status\n");
+
+  // Check .mcp.json
+  if (existsSync(mcpPath)) {
+    try {
+      const config = JSON.parse(await readFile(mcpPath, "utf-8"));
+      if (config.mcpServers?.preflight) {
+        const srv = config.mcpServers.preflight;
+        const profile = srv.env?.PROMPT_DISCIPLINE_PROFILE || "standard";
+        const embeddings = srv.env?.EMBEDDING_PROVIDER || "local";
+        console.log(`  ✅ .mcp.json — preflight registered (profile: ${profile}, embeddings: ${embeddings})`);
+      } else {
+        console.log("  ❌ .mcp.json exists but no 'preflight' server configured");
+      }
+    } catch {
+      console.log("  ⚠️  .mcp.json exists but failed to parse");
+    }
+  } else {
+    console.log("  ❌ No .mcp.json found — run `npx preflight-dev` to set up");
+  }
+
+  // Check .preflight/ config dir
+  if (existsSync(preflightDir)) {
+    const files = ["config.yml", "triage.yml"].filter(f => existsSync(join(preflightDir, f)));
+    console.log(`  ✅ .preflight/ directory (${files.length} config files: ${files.join(", ") || "none"})`);
+  } else {
+    console.log("  ℹ️  No .preflight/ directory (optional — sensible defaults apply)");
+  }
+
+  // Check environment
+  if (process.env.CLAUDE_PROJECT_DIR) {
+    console.log(`  ✅ CLAUDE_PROJECT_DIR = ${process.env.CLAUDE_PROJECT_DIR}`);
+  } else {
+    console.log("  ℹ️  CLAUDE_PROJECT_DIR not set (some tools use cwd instead)");
+  }
+
+  console.log("");
+  process.exit(0);
+}
+
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
 function ask(question: string): Promise<string> {
