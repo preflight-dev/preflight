@@ -124,6 +124,15 @@ claude mcp add preflight -- preflight-dev-serve
 
 > **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
 
+### CLI commands
+
+```bash
+preflight-dev              # Interactive setup wizard
+preflight-dev status       # Check if preflight is configured in this project
+preflight-dev --version    # Print version
+preflight-dev --help       # Show usage help
+```
+
 ---
 
 ## How It Works
