@@ -45,7 +45,7 @@ interface EventStats {
   assistantMessages: number;
 }
 
-function computeStats(events: any[]): EventStats {
+export function computeStats(events: any[]): EventStats {
   const stats: EventStats = {
     prompts: 0,
     commits: 0,
@@ -71,7 +71,7 @@ function computeStats(events: any[]): EventStats {
   return stats;
 }
 
-function formatPeriodLabel(period: string, since?: string, until?: string): string {
+export function formatPeriodLabel(period: string, since?: string, until?: string): string {
   if (since && until) return `${since} to ${until}`;
   if (period === "7days") return "Last 7 Days";
   if (period === "30days") return "Last 30 Days";
@@ -79,7 +79,7 @@ function formatPeriodLabel(period: string, since?: string, until?: string): stri
   return period;
 }
 
-function getDateRange(period: string): { since: string; until: string } {
+export function getDateRange(period: string): { since: string; until: string } {
   const now = new Date();
   const until = now.toISOString();
   let since: Date;
