@@ -30,7 +30,7 @@ async function saveHistory(history: ScoreHistory): Promise<void> {
   await writeFile(STATE_FILE, JSON.stringify(history, null, 2));
 }
 
-interface ScoreResult {
+export interface ScoreResult {
   specificity: number;
   scope: number;
   actionability: number;
@@ -40,7 +40,7 @@ interface ScoreResult {
   feedback: string[];
 }
 
-function scorePrompt(text: string): ScoreResult {
+export function scorePrompt(text: string): ScoreResult {
   const feedback: string[] = [];
   let specificity: number;
   let scope: number;
