@@ -76,7 +76,22 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: npx (fastest — no install)
+### Option A: Interactive setup (recommended)
+
+```bash
+cd /path/to/your/project
+npx -y preflight-dev
+```
+
+This runs the `preflight-dev init` wizard which:
+1. Creates your `.mcp.json` with the right config
+2. Lets you pick a profile (minimal / standard / full)
+3. Optionally creates a `.preflight/` config directory with templates
+4. Configures your embedding provider if using the full profile
+
+Restart Claude Code after setup — done.
+
+### Option B: npx (one-liner, no wizard)
 
 ```bash
 claude mcp add preflight -- npx -y preflight-dev-serve
@@ -90,7 +105,7 @@ claude mcp add preflight \
   -- npx -y preflight-dev-serve
 ```
 
-### Option B: Clone & configure manually
+### Option C: Clone & configure manually
 
 ```bash
 git clone https://github.com/TerminalGravity/preflight.git
@@ -115,7 +130,7 @@ Add to your project's `.mcp.json`:
 
 Restart Claude Code. The tools activate automatically.
 
-### Option C: npm (global)
+### Option D: npm (global)
 
 ```bash
 npm install -g preflight-dev
@@ -123,6 +138,12 @@ claude mcp add preflight -- preflight-dev-serve
 ```
 
 > **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
+
+### After setup
+
+Once installed, there's nothing to learn — just use Claude Code normally. Preflight intercepts prompts via `preflight_check` and only speaks up when it can save you tokens.
+
+**Commit `.preflight/` to your repo** if you created one — your whole team gets the same triage rules. The `.mcp.json` file should also be committed so teammates get the MCP server automatically.
 
 ---
 
