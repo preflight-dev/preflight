@@ -491,6 +491,11 @@ This prevents the common failure mode: changing a shared type in one service and
 
 Drop this in your project root. Every field is optional — defaults are sensible.
 
+> **Quick start:** Copy the example config into your project:
+> ```bash
+> cp -r /path/to/preflight/examples/.preflight .preflight
+> ```
+
 ```yaml
 # Profile controls overall verbosity
 # "minimal" — only flag ambiguous+, skip clarification detail
