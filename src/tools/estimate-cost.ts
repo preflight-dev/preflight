@@ -31,11 +31,11 @@ const PREFLIGHT_TOOLS = new Set([
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function estimateTokens(text: string): number {
+export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function extractText(content: unknown): string {
+export function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
@@ -46,25 +46,25 @@ function extractText(content: unknown): string {
   return "";
 }
 
-function extractToolNames(content: unknown): string[] {
+export function extractToolNames(content: unknown): string[] {
   if (!Array.isArray(content)) return [];
   return content
     .filter((b: any) => b.type === "tool_use" && b.name)
     .map((b: any) => b.name as string);
 }
 
-function formatTokens(n: number): string {
+export function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
 
-function formatCost(dollars: number): string {
+export function formatCost(dollars: number): string {
   if (dollars < 0.01) return `<$0.01`;
   return `$${dollars.toFixed(2)}`;
 }
 
-function formatDuration(ms: number): string {
+export function formatDuration(ms: number): string {
   const mins = Math.floor(ms / 60_000);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
@@ -72,7 +72,7 @@ function formatDuration(ms: number): string {
   return `${hours}h ${rem}m`;
 }
 
-interface SessionAnalysis {
+export interface SessionAnalysis {
   inputTokens: number;
   outputTokens: number;
   promptCount: number;
@@ -85,7 +85,7 @@ interface SessionAnalysis {
   lastTimestamp: string | null;
 }
 
-function analyzeSessionFile(filePath: string): SessionAnalysis {
+export function analyzeSessionFile(filePath: string): SessionAnalysis {
   const content = readFileSync(filePath, "utf-8");
   const lines = content.trim().split("\n").filter(Boolean);
 
