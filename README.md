@@ -124,6 +124,16 @@ claude mcp add preflight -- preflight-dev-serve
 
 > **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
 
+### Make Claude use preflight automatically
+
+Add preflight rules to your project's `CLAUDE.md` so Claude runs `preflight_check` on every prompt without you asking:
+
+```bash
+cp /path/to/preflight/examples/CLAUDE.md your-project/CLAUDE.md
+```
+
+See [`examples/CLAUDE.md`](examples/CLAUDE.md) for a ready-to-use template with recommended rules for when to preflight, session hygiene, and skip-lists.
+
 ---
 
 ## How It Works
