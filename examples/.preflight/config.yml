@@ -1,35 +1,33 @@
-# .preflight/config.yml — Drop this in your project root
-#
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# .preflight/config.yml
+# Drop this directory in your project root to configure preflight.
+# All fields are optional — defaults are shown below.
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
-#   "full"     — maximum detail on every non-trivial prompt
+# Profile controls how aggressive preflight is:
+#   minimal  — only catches clearly vague prompts
+#   standard — balanced (recommended for most teams)
+#   full     — checks everything, including cross-service contracts
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
+# Related projects for cross-service contract awareness.
+# Preflight will scan these for shared types, routes, and schemas.
 related_projects:
-  - path: /Users/you/code/auth-service
-    alias: auth
-  - path: /Users/you/code/billing-api
-    alias: billing
-  - path: /Users/you/code/shared-types
+  - path: ../api-service
+    alias: api
+  - path: ../shared-types
     alias: types
 
-# Behavioral thresholds — tune these to your workflow
+# Tuning knobs
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Minutes before a session is considered stale (triggers context refresh)
+  session_stale_minutes: 30
+  # Tool calls before preflight suggests a checkpoint
+  max_tool_calls_before_checkpoint: 100
+  # How many times a correction pattern repeats before warning
+  correction_pattern_threshold: 3
 
 # Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+#   local  — runs entirely on your machine (no API key needed, slower)
+#   openai — uses OpenAI embeddings (faster, requires OPENAI_API_KEY)
 embeddings:
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+  # openai_api_key: sk-...  # or set OPENAI_API_KEY env var
