@@ -1,6 +1,31 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
+
+/**
+ * Run an arbitrary shell command (with shell operators like |, &&, <, 2>&1).
+ * Use this for non-git commands or when shell features are needed.
+ * Returns stdout on success, descriptive error string on failure.
+ */
+export function shell(cmd: string, opts: { timeout?: number; cwd?: string } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: opts.cwd || PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    const timedOut = e.killed === true || e.signal === "SIGTERM";
+    if (timedOut) {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
+}
 
 /**
  * Run a git command safely using execFileSync (no shell injection).
