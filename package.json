@@ -41,6 +41,7 @@
     "src/",
     "bin/",
     "dist/",
+    "examples/",
     "README.md",
     "LICENSE"
   ],

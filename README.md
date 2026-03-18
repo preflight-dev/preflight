@@ -115,6 +115,20 @@ Add to your project's `.mcp.json`:
 
 Restart Claude Code. The tools activate automatically.
 
+### Optional: Initialize project config
+
+After adding the MCP server (any option), run the setup wizard in your project directory to create a `.preflight/` config:
+
+```bash
+# Interactive wizard — sets up .mcp.json and .preflight/ config
+npx preflight-dev
+
+# Or manually copy the example configs:
+cp -r node_modules/preflight-dev/examples/.preflight .preflight
+```
+
+The `.preflight/` directory is optional — preflight works with sensible defaults out of the box. But if you want to customize triage rules, add related projects for cross-service awareness, or tune thresholds, this is where you do it. Commit it to your repo so the whole team shares the same config.
+
 ### Option C: npm (global)
 
 ```bash
