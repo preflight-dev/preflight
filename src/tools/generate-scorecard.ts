@@ -76,12 +76,12 @@ interface ParsedSession {
 }
 
 function classifyEvents(events: TimelineEvent[]): ParsedSession {
-  const userMessages = events.filter((e) => e.type === "user_prompt");
-  const assistantMessages = events.filter((e) => e.type === "assistant_response");
+  const userMessages = events.filter((e) => e.type === "prompt" || e.type === "user_prompt");
+  const assistantMessages = events.filter((e) => e.type === "assistant" || e.type === "assistant_response");
   const toolCalls = events.filter((e) => e.type === "tool_call");
   const corrections = events.filter((e) => e.type === "correction");
   const compactions = events.filter((e) => e.type === "compaction");
-  const commits = events.filter((e) => e.type === "git_commit");
+  const commits = events.filter((e) => e.type === "git_commit" || e.type === "commit");
   const subAgentSpawns = events.filter((e) => e.type === "sub_agent_spawn");
 
   let durationMinutes = 0;
@@ -178,10 +178,10 @@ function scoreFollowUpSpecificity(sessions: ParsedSession[]): CategoryScore {
   for (const s of sessions) {
     for (let i = 0; i < s.events.length; i++) {
       const ev = s.events[i];
-      if (ev.type !== "user_prompt") continue;
+      if (ev.type !== "prompt" && ev.type !== "user_prompt") continue;
       // Check if preceded by assistant
-      const prev = s.events.slice(0, i).reverse().find((e) => e.type === "assistant_response" || e.type === "user_prompt");
-      if (prev?.type !== "assistant_response") continue;
+      const prev = s.events.slice(0, i).reverse().find((e) => e.type === "assistant" || e.type === "assistant_response" || e.type === "prompt" || e.type === "user_prompt");
+      if (prev?.type !== "assistant" && prev?.type !== "assistant_response") continue;
 
       followUps++;
       if (hasFileRef(ev.content) || ev.content.length >= 50) {
@@ -271,7 +271,7 @@ function scoreCompactionManagement(sessions: ParsedSession[]): CategoryScore {
       totalCompactions++;
       const cIdx = s.events.indexOf(c);
       const nearby = s.events.slice(Math.max(0, cIdx - 10), cIdx);
-      if (nearby.some((e) => e.type === "git_commit")) covered++;
+      if (nearby.some((e) => e.type === "git_commit" || e.type === "commit")) covered++;
     }
   }
   if (totalCompactions === 0) return { name: "Compaction Management", score: 100, grade: "A+", evidence: "No compactions needed — sessions stayed manageable." };
@@ -311,7 +311,7 @@ function scoreErrorRecovery(sessions: ParsedSession[]): CategoryScore {
       totalCorrections++;
       const cIdx = s.events.indexOf(c);
       const after = s.events.slice(cIdx + 1, cIdx + 3);
-      if (after.some((e) => e.type === "tool_call" || e.type === "assistant_response")) fastRecoveries++;
+      if (after.some((e) => e.type === "tool_call" || e.type === "assistant" || e.type === "assistant_response")) fastRecoveries++;
     }
   }
   if (totalCorrections === 0) return { name: "Error Recovery", score: 95, grade: "A", evidence: "No corrections needed." };
