@@ -12,6 +12,22 @@ The `.preflight/` directory contains example configuration files you can copy in
     └── api.yml             # Manual contract definitions for cross-service types
 ```
 
+## `CLAUDE.md` Integration
+
+The `CLAUDE.md` file tells Claude Code how to behave in your project. Adding preflight rules here makes Claude automatically use preflight tools without you having to ask.
+
+```bash
+# Copy the example into your project:
+cp /path/to/preflight/examples/CLAUDE.md my-project/CLAUDE.md
+
+# Or append to your existing CLAUDE.md:
+cat /path/to/preflight/examples/CLAUDE.md >> my-project/CLAUDE.md
+```
+
+This is the **recommended way** to integrate preflight — once it's in your `CLAUDE.md`, every session automatically runs `preflight_check` on your prompts.
+
+---
+
 ### Quick setup
 
 ```bash
