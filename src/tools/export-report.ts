@@ -13,7 +13,7 @@ import { join, dirname } from "path";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getDateRange(period: string): { since: string; until: string; label: string } {
+export function getDateRange(period: string): { since: string; until: string; label: string } {
   const now = new Date();
   const until = now.toISOString();
 
@@ -72,7 +72,7 @@ async function getSearchProjects(scope: SearchScope): Promise<string[]> {
   }
 }
 
-interface EventSummary {
+export interface EventSummary {
   total: number;
   byType: Record<string, number>;
   byDay: Record<string, number>;
@@ -83,7 +83,7 @@ interface EventSummary {
   toolCalls: number;
 }
 
-function summarizeEvents(events: any[]): EventSummary {
+export function summarizeEvents(events: any[]): EventSummary {
   const summary: EventSummary = {
     total: events.length,
     byType: {},
@@ -114,7 +114,7 @@ function summarizeEvents(events: any[]): EventSummary {
   return summary;
 }
 
-function generateMarkdown(
+export function generateMarkdown(
   summary: EventSummary,
   label: string,
   projectName: string,
