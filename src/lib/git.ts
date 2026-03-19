@@ -1,14 +1,52 @@
-import { execFileSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
 
 /**
+ * Run a shell command string (supports pipes, redirects, etc.).
+ * Returns stdout on success, descriptive error string on failure.
+ */
+export function shell(cmd: string, opts: { timeout?: number } = {}): string {
+  try {
+    return execSync(cmd, {
+      cwd: PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    if (e.killed === true || e.signal === "SIGTERM") {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    return `[command failed: ${cmd} (exit ${e.status ?? "?"})]`;
+  }
+}
+
+/**
  * Run a git command safely using execFileSync (no shell injection).
  * Accepts an array of args (preferred) or a string (split on whitespace for backward compat).
+ * When passed a string, strips a leading "git" if present and removes shell syntax
+ * (redirections like 2>/dev/null, || clauses) that don't work with execFileSync.
  * Returns stdout on success. On failure, returns a descriptive error string.
  */
 export function run(argsOrCmd: string | string[], opts: { timeout?: number } = {}): string {
-  const args = typeof argsOrCmd === "string" ? argsOrCmd.split(/\s+/) : argsOrCmd;
+  let args: string[];
+  if (typeof argsOrCmd === "string") {
+    // Strip shell syntax that doesn't work with execFileSync
+    let cleaned = argsOrCmd
+      .replace(/\s*2>&?\d*\s*>?\s*\/dev\/null/g, "")  // 2>/dev/null, 2>&1
+      .replace(/\s*\|.*$/g, "")                          // pipe chains
+      .replace(/\s*\|\|.*$/g, "")                        // || fallbacks
+      .trim();
+    args = cleaned.split(/\s+/).filter(Boolean);
+    // Strip leading "git" if caller passed it (run already prepends git)
+    if (args[0] === "git") args = args.slice(1);
+  } else {
+    args = argsOrCmd;
+  }
   try {
     return execFileSync("git", args, {
       cwd: PROJECT_DIR,
