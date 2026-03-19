@@ -36,7 +36,7 @@ const CORRECTION_PATTERNS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function extractText(content: unknown): string {
+export function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
@@ -47,12 +47,12 @@ function extractText(content: unknown): string {
   return "";
 }
 
-function extractToolUseBlocks(content: unknown): any[] {
+export function extractToolUseBlocks(content: unknown): any[] {
   if (!Array.isArray(content)) return [];
   return content.filter((b: any) => b.type === "tool_use");
 }
 
-function normalizeTimestamp(ts: unknown, fallback: string): string {
+export function normalizeTimestamp(ts: unknown, fallback: string): string {
   if (!ts) return fallback;
   if (typeof ts === "string") {
     const d = new Date(ts);
@@ -66,12 +66,12 @@ function normalizeTimestamp(ts: unknown, fallback: string): string {
   return fallback;
 }
 
-function preview(text: string, max = 120): string {
+export function preview(text: string, max = 120): string {
   const line = text.split("\n")[0] ?? "";
   return line.length > max ? line.slice(0, max) + "…" : line;
 }
 
-function isCorrection(text: string): boolean {
+export function isCorrection(text: string): boolean {
   return CORRECTION_PATTERNS.some((p) => p.test(text));
 }
 
