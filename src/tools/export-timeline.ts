@@ -6,7 +6,7 @@ import type { SearchScope } from "../types.js";
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
-function parseRelativeDate(input: string): string {
+export function parseRelativeDate(input: string): string {
   const match = input.match(RELATIVE_DATE_RE);
   if (!match) return input;
   const [, numStr, unit] = match;
@@ -48,7 +48,7 @@ const TYPE_ICONS: Record<string, string> = {
   error: "⚠️",
 };
 
-interface TimelineEvent {
+export interface TimelineEvent {
   timestamp?: string;
   type: string;
   content?: string;
@@ -59,7 +59,7 @@ interface TimelineEvent {
   project?: string;
 }
 
-function computeStats(events: TimelineEvent[]) {
+export function computeStats(events: TimelineEvent[]) {
   const byType: Record<string, number> = {};
   const byDay: Record<string, number> = {};
   let totalPromptChars = 0;
@@ -80,7 +80,7 @@ function computeStats(events: TimelineEvent[]) {
   return { byType, byDay, avgPromptLen: promptCount > 0 ? Math.round(totalPromptChars / promptCount) : 0, promptCount };
 }
 
-function generateMarkdownReport(
+export function generateMarkdownReport(
   events: TimelineEvent[],
   opts: { project: string; since?: string; until?: string; title?: string }
 ): string {
