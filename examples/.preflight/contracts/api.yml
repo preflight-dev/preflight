@@ -1,17 +1,16 @@
 # .preflight/contracts/api.yml — Manual contract definitions
 #
-# Define shared types and interfaces that preflight should know about.
 # These supplement auto-extracted contracts from your codebase.
-# Manual definitions win on name conflicts with auto-extracted ones.
+# Use them for:
+#   - API contracts that aren't easily auto-detected
+#   - Shared types across services that need explicit documentation
+#   - Domain models that drive business logic
 #
-# Why manual contracts?
-#   - Document cross-service interfaces that live in docs, not code
-#   - Define contracts for external APIs your services consume
-#   - Pin down types that are implicit (e.g., event payloads)
+# Manual definitions win on name conflicts with auto-extracted ones.
 
 - name: User
   kind: interface
-  description: Core user model shared across all services
+  description: Core user model — referenced across auth, billing, and API layers
   fields:
     - name: id
       type: string
@@ -19,40 +18,41 @@
     - name: email
       type: string
       required: true
-    - name: tier
-      type: "'free' | 'pro' | 'enterprise'"
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
       required: true
     - name: createdAt
       type: Date
       required: true
 
-- name: AuthToken
+- name: ApiResponse
   kind: interface
-  description: JWT payload structure from auth-service
+  description: Standard API response wrapper used by all endpoints
   fields:
-    - name: userId
-      type: string
-      required: true
-    - name: permissions
-      type: string[]
-      required: true
-    - name: expiresAt
-      type: number
-      required: true
-
-- name: WebhookPayload
-  kind: interface
-  description: Standard webhook envelope for inter-service events
-  fields:
-    - name: event
-      type: string
-      required: true
-    - name: timestamp
-      type: string
+    - name: success
+      type: boolean
       required: true
     - name: data
-      type: Record<string, unknown>
-      required: true
-    - name: source
-      type: string
-      required: true
+      type: T
+      required: false
+    - name: error
+      type: "{ code: string; message: string }"
+      required: false
+
+# Add your own contracts below. Examples:
+#
+# - name: OrderStatus
+#   kind: enum
+#   description: Order lifecycle states
+#   values: [pending, confirmed, shipped, delivered, cancelled]
+#
+# - name: POST /api/webhooks
+#   kind: route
+#   description: Incoming webhook handler
+#   fields:
+#     - name: event
+#       type: string
+#       required: true
+#     - name: payload
+#       type: Record<string, unknown>
+#       required: true

@@ -1,45 +1,50 @@
-# .preflight/triage.yml — Controls how preflight classifies your prompts
+# .preflight/triage.yml — Controls the prompt triage engine
 #
-# The triage engine routes prompts into categories:
+# Triage classifies every prompt into one of four categories:
 #   TRIVIAL       → pass through (commit, format, lint)
 #   CLEAR         → well-specified, no intervention needed
 #   AMBIGUOUS     → needs clarification before proceeding
-#   MULTI-STEP    → complex task, preflight suggests a plan
-#   CROSS-SERVICE → touches multiple projects, pulls in contracts
+#   CROSS-SERVICE → touches multiple projects, needs contract context
 #
-# Customize the keywords below to match your domain.
+# Customize the keywords below to match YOUR project's domain.
 
 rules:
-  # Prompts containing these words are always flagged as AMBIGUOUS.
-  # Add domain-specific terms that tend to produce vague prompts.
+  # ── Always check ──────────────────────────────────────
+  # Prompts containing these words are always flagged as AMBIGUOUS
+  # (at minimum) so preflight asks for clarification.
+  # Add your project's tricky/overloaded terms here.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    - pricing          # example: your billing domain
-    - onboarding       # example: multi-step user flows
+    # - billing        # Uncomment for fintech projects
+    # - deployment     # Uncomment if deploys are complex
 
-  # Prompts containing these words skip checks entirely (TRIVIAL).
-  # These are safe, mechanical tasks that don't need guardrails.
+  # ── Skip (trivial) ───────────────────────────────────
+  # Prompts matching these pass through without intervention.
+  # These are low-risk, well-understood commands.
   skip:
     - commit
     - format
     - lint
-    - prettier
-    - "git push"
+    - "git status"
+    - "run tests"
 
-  # Prompts containing these words trigger CROSS-SERVICE classification.
-  # Preflight will search related_projects for relevant types and routes.
+  # ── Cross-service keywords ───────────────────────────
+  # Prompts containing these trigger cross-project search,
+  # pulling in types/routes/schemas from related_projects.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - billing          # matches the related_project alias
+    # - payment       # Uncomment if payments are a separate service
+    # - queue         # Uncomment for message queue integrations
 
-# How aggressively to classify prompts.
-#   "relaxed"  — more prompts pass as clear (experienced users)
+# ── Strictness ────────────────────────────────────────
+# How aggressively to classify prompts:
+#   "relaxed"  — more prompts pass as clear (fewer interruptions)
 #   "standard" — balanced (default)
-#   "strict"   — more prompts flagged as ambiguous (new teams, complex codebases)
+#   "strict"   — more prompts flagged as ambiguous (safer, more verbose)
 strictness: standard

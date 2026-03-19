@@ -1,35 +1,49 @@
 # .preflight/config.yml — Drop this in your project root
+# Every field is optional. Defaults are sensible — only override what you need.
 #
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# Copy this entire .preflight/ directory into your project:
+#   cp -r examples/.preflight /path/to/your/project/
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
-#   "full"     — maximum detail on every non-trivial prompt
+# ──────────────────────────────────────────────────────────
+# Profile: controls how verbose preflight's feedback is
+# ──────────────────────────────────────────────────────────
+# "minimal"  — only flags ambiguous+ prompts, skips detail
+# "standard" — balanced (default)
+# "full"     — maximum detail on every non-trivial prompt
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
-related_projects:
-  - path: /Users/you/code/auth-service
-    alias: auth
-  - path: /Users/you/code/billing-api
-    alias: billing
-  - path: /Users/you/code/shared-types
-    alias: types
+# ──────────────────────────────────────────────────────────
+# Related projects for cross-service awareness
+# ──────────────────────────────────────────────────────────
+# When you reference code that lives in another repo (e.g. a shared auth
+# service), preflight can search that project's types, routes, and schemas
+# to give you relevant context automatically.
+#
+# related_projects:
+#   - path: /Users/you/code/auth-service
+#     alias: auth
+#   - path: /Users/you/code/shared-types
+#     alias: types
 
-# Behavioral thresholds — tune these to your workflow
+# ──────────────────────────────────────────────────────────
+# Behavioral thresholds
+# ──────────────────────────────────────────────────────────
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Warn if no session activity for this many minutes
+  session_stale_minutes: 30
 
-# Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+  # Suggest a checkpoint after this many tool calls
+  max_tool_calls_before_checkpoint: 100
+
+  # Minimum correction count before preflight detects a pattern
+  # (e.g. "you've corrected JWT handling 3 times — adding a reminder")
+  correction_pattern_threshold: 3
+
+# ──────────────────────────────────────────────────────────
+# Embedding configuration (for semantic search over session history)
+# ──────────────────────────────────────────────────────────
+# "local" uses Xenova transformers — no API key needed, runs on-device.
+# "openai" uses OpenAI embeddings — better quality, requires API key.
 embeddings:
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+  # openai_api_key: sk-...  # Uncomment if using openai provider
