@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
@@ -123,6 +123,16 @@ claude mcp add preflight -- preflight-dev-serve
 ```
 
 > **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
+
+### Make Claude use preflight automatically
+
+Add preflight rules to your project's `CLAUDE.md` so Claude runs `preflight_check` on every prompt without you asking:
+
+```bash
+cp /path/to/preflight/examples/CLAUDE.md your-project/CLAUDE.md
+```
+
+See [`examples/CLAUDE.md`](examples/CLAUDE.md) for a ready-to-use template with recommended rules for when to preflight, session hygiene, and skip-lists.
 
 ---
 
@@ -731,6 +741,16 @@ ollama pull all-minilm
 # Verify it works
 curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
 ```
+
+---
+
+## Troubleshooting
+
+Having issues? Check **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for solutions to common problems including:
+- LanceDB setup and platform issues
+- Embedding provider configuration
+- `.preflight/` config parsing errors
+- Profile selection guide
 
 ---
 
