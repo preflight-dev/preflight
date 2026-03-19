@@ -9,6 +9,46 @@ import { join, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+// Handle --help and --version before launching interactive wizard
+const args = process.argv.slice(2);
+
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+✈️  preflight-dev — MCP server for Claude Code prompt discipline
+
+Usage:
+  preflight-dev              Interactive setup wizard (creates .mcp.json)
+  preflight-dev --help       Show this help message
+  preflight-dev --version    Show version
+
+The wizard will:
+  1. Ask you to choose a profile (minimal / standard / full)
+  2. Optionally create a .preflight/ config directory
+  3. Write an .mcp.json so Claude Code auto-connects to preflight
+
+After setup, restart Claude Code and preflight tools will appear.
+
+Profiles:
+  minimal   4 tools — clarify_intent, check_session_health, session_stats, prompt_score
+  standard  16 tools — all prompt discipline + session_stats + prompt_score
+  full      20 tools — everything + timeline/vector search (needs LanceDB)
+
+More info: https://github.com/TerminalGravity/preflight
+`);
+  process.exit(0);
+}
+
+if (args.includes("--version") || args.includes("-v")) {
+  const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "../../package.json");
+  try {
+    const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+    console.log(`preflight-dev v${pkg.version}`);
+  } catch {
+    console.log("preflight-dev (version unknown)");
+  }
+  process.exit(0);
+}
+
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
 function ask(question: string): Promise<string> {
