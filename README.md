@@ -744,6 +744,16 @@ curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
 
 ---
 
+## Troubleshooting
+
+Having issues? Check **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for solutions to common problems including:
+- LanceDB setup and platform issues
+- Embedding provider configuration
+- `.preflight/` config parsing errors
+- Profile selection guide
+
+---
+
 ## Contributing
 
 This project is young and there's plenty to do. Check the [issues](https://github.com/TerminalGravity/preflight/issues) — several are tagged `good first issue`.
