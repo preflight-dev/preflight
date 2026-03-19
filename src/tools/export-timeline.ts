@@ -6,7 +6,7 @@ import type { SearchScope } from "../types.js";
 
 const RELATIVE_DATE_RE = /^(\d+)(days?|weeks?|months?|years?)$/;
 
-function parseRelativeDate(input: string): string {
+export function parseRelativeDate(input: string): string {
   const match = input.match(RELATIVE_DATE_RE);
   if (!match) return input;
   const [, numStr, unit] = match;
@@ -69,7 +69,7 @@ interface ReportStats {
   toolCallCount: number;
 }
 
-function computeStats(events: TimelineEvent[]): ReportStats {
+export function computeStats(events: TimelineEvent[]): ReportStats {
   const byType: Record<string, number> = {};
   const byDay = new Map<string, TimelineEvent[]>();
 
@@ -94,7 +94,7 @@ function computeStats(events: TimelineEvent[]): ReportStats {
   };
 }
 
-function generateMarkdownReport(
+export function generateMarkdownReport(
   events: TimelineEvent[],
   stats: ReportStats,
   options: { title: string; since?: string; until?: string; sections: string[] }
@@ -127,12 +127,14 @@ function generateMarkdownReport(
     lines.push("");
 
     if (stats.total > 0) {
-      const correctionRate = (
-        (stats.correctionCount / stats.promptCount) *
-        100
-      ).toFixed(1);
+      const correctionRate =
+        stats.promptCount > 0
+          ? ((stats.correctionCount / stats.promptCount) * 100).toFixed(1)
+          : "N/A";
       const errorRate = ((stats.errorCount / stats.total) * 100).toFixed(1);
-      lines.push(`**Correction rate:** ${correctionRate}% of prompts`);
+      lines.push(
+        `**Correction rate:** ${correctionRate === "N/A" ? correctionRate : correctionRate + "%"} of prompts`
+      );
       lines.push(`**Error rate:** ${errorRate}% of events`);
       lines.push("");
     }
