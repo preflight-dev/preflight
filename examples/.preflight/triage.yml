@@ -1,45 +1,37 @@
-# .preflight/triage.yml — Controls how preflight classifies your prompts
-#
-# The triage engine routes prompts into categories:
-#   TRIVIAL       → pass through (commit, format, lint)
-#   CLEAR         → well-specified, no intervention needed
-#   AMBIGUOUS     → needs clarification before proceeding
-#   MULTI-STEP    → complex task, preflight suggests a plan
-#   CROSS-SERVICE → touches multiple projects, pulls in contracts
-#
-# Customize the keywords below to match your domain.
+# .preflight/triage.yml
+# Controls how preflight_check triages your prompts.
+# Separate from config.yml so you can tune triage rules independently.
+
+# Strictness level:
+#   relaxed  — only flags clearly ambiguous prompts
+#   standard — balanced (default)
+#   strict   — flags anything that could be more specific
+strictness: standard
 
 rules:
-  # Prompts containing these words are always flagged as AMBIGUOUS.
-  # Add domain-specific terms that tend to produce vague prompts.
+  # Keywords that ALWAYS trigger a full preflight check, even for short prompts.
+  # Use this for high-risk areas of your codebase.
   always_check:
     - rewards
     - permissions
     - migration
     - schema
-    - pricing          # example: your billing domain
-    - onboarding       # example: multi-step user flows
+    - billing
+    - auth
 
-  # Prompts containing these words skip checks entirely (TRIVIAL).
-  # These are safe, mechanical tasks that don't need guardrails.
+  # Keywords that SKIP preflight checks entirely.
+  # Use this for low-risk, routine commands.
   skip:
     - commit
     - format
     - lint
     - prettier
-    - "git push"
 
-  # Prompts containing these words trigger CROSS-SERVICE classification.
-  # Preflight will search related_projects for relevant types and routes.
+  # Keywords that trigger cross-service contract scanning.
+  # When these appear, preflight also checks related_projects for shared types.
   cross_service_keywords:
     - auth
     - notification
     - event
     - webhook
-    - billing          # matches the related_project alias
-
-# How aggressively to classify prompts.
-#   "relaxed"  — more prompts pass as clear (experienced users)
-#   "standard" — balanced (default)
-#   "strict"   — more prompts flagged as ambiguous (new teams, complex codebases)
-strictness: standard
+    - payment
