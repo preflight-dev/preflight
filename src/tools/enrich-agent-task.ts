@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getDiffFiles } from "../lib/git.js";
+import { run, shell, getDiffFiles } from "../lib/git.js";
 import { PROJECT_DIR } from "../lib/files.js";
 import { getConfig, type RelatedProject } from "../lib/config.js";
 import { existsSync, readFileSync } from "fs";
@@ -42,11 +42,11 @@ function findAreaFiles(area: string): string {
 
 /** Find related test files for an area */
 function findRelatedTests(area: string): string {
-  if (!area) return run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  if (!area) return shell("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
 
   const safeArea = shellEscape(area.split(/\s+/)[0]);
   const tests = run(`git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | grep -i '${safeArea}' | head -10`);
-  return tests || run("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
+  return tests || shell("git ls-files 2>/dev/null | grep -E '\\.(spec|test)\\.(ts|tsx|js|jsx)$' | head -10");
 }
 
 /** Get an example pattern from the first matching file */
