@@ -1,6 +1,26 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { readdirSync } from "fs";
+import { join } from "path";
 import { run } from "../lib/git.js";
-import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { readIfExists, findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
+
+/** Recursively count .spec.ts and .test.ts files under a directory */
+function countTestFiles(dir: string): number {
+  let count = 0;
+  try {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        count += countTestFiles(full);
+      } else if (/\.(spec|test)\.ts$/.test(entry.name)) {
+        count++;
+      }
+    }
+  } catch {
+    // Directory doesn't exist or not readable
+  }
+  return count;
+}
 
 /** Extract top-level work areas from file paths generically */
 function detectWorkAreas(files: string[]): Set<string> {
@@ -36,7 +56,12 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      // Use array args — run() uses execFileSync (no shell)
+      let recentFiles: string[] = [];
+      const diffOutput = run(["diff", "--name-only", "HEAD~10", "HEAD"]);
+      if (diffOutput && !diffOutput.startsWith("[")) {
+        recentFiles = diffOutput.split("\n").filter(Boolean);
+      }
       const sections: string[] = [];
 
       // Doc freshness
@@ -75,7 +100,8 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(run("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        // Count test files using Node.js instead of shell pipes
+        const testFilesCount = countTestFiles(join(PROJECT_DIR, "tests"));
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;
