@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
+import { run, exec, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFiles } from "../lib/git.js";
 import { findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
@@ -152,10 +152,15 @@ export function registerClarifyIntent(server: McpServer): void {
       let hasTestFailures = false;
 
       if (!area || area.includes("test") || area.includes("fix") || area.includes("ui") || area.includes("api")) {
-        const typeErrors = run("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
-        hasTypeErrors = parseInt(typeErrors, 10) > 0;
+        const typeErrorOutput = exec("pnpm", ["tsc", "--noEmit"], { timeout: 30000 });
+        const typeErrorCount = (typeErrorOutput.match(/error TS/g) || []).length;
+        const typeErrors = String(typeErrorCount);
+        hasTypeErrors = typeErrorCount > 0;
 
-        const testFiles = run("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
+        const testFilesRaw = run(["ls-files"]);
+        const testFiles = testFilesRaw && !testFilesRaw.startsWith("[")
+          ? testFilesRaw.split("\n").filter(f => /^tests?\//.test(f) && f.endsWith(".spec.ts")).slice(0, 20).join("\n")
+          : "";
         const failingTests = getTestFailures();
         hasTestFailures = failingTests !== "all passing" && failingTests !== "no test report found";
 
