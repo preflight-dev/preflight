@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.preflight-dev/preflight",
+  "description": "24-tool MCP server for Claude Code — catches vague prompts before they waste tokens, with 12-category scorecards, session history search via LanceDB vectors, cross-service contract awareness, correction pattern learning, and cost estimation.",
+  "repository": {
+    "url": "https://github.com/preflight-dev/preflight",
+    "source": "github"
+  },
+  "version": "3.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "preflight-dev",
+      "version": "3.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Path to the project directory for preflight to analyze",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "CLAUDE_PROJECT_DIR"
+        }
+      ]
+    }
+  ]
+}
