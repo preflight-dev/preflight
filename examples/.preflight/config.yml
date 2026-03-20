@@ -1,35 +1,49 @@
-# .preflight/config.yml — Drop this in your project root
+# =============================================================================
+# Preflight Configuration — config.yml
+# =============================================================================
+# Copy this file to: <your-project-root>/.preflight/config.yml
+# All settings are optional — preflight works out of the box without config.
 #
-# This is an example config for a typical Next.js + microservices setup.
-# Every field is optional — preflight works with sensible defaults out of the box.
-# Commit this to your repo so the whole team gets the same preflight behavior.
+# Docs: https://github.com/TerminalGravity/preflight#configuration-reference
+# =============================================================================
 
-# Profile controls how much detail preflight returns.
-#   "minimal"  — only flags ambiguous+ prompts, skips clarification detail
-#   "standard" — balanced (default)
-#   "full"     — maximum detail on every non-trivial prompt
+# Profile controls which tools are active.
+#   minimal  → just preflight_check (the unified entry point)
+#   standard → core tools + session search + scorecards (recommended)
+#   full     → everything, including contracts and correction patterns
 profile: standard
 
-# Related projects for cross-service awareness.
-# Preflight will search these for shared types, routes, and contracts
-# so it can warn you when a change might break a consumer.
+# Related projects for cross-service context.
+# When you reference an API type or route that lives in another repo,
+# preflight will search these projects for matching contracts/types.
 related_projects:
-  - path: /Users/you/code/auth-service
-    alias: auth
-  - path: /Users/you/code/billing-api
-    alias: billing
-  - path: /Users/you/code/shared-types
-    alias: types
+  # Uncomment and edit to match your setup:
+  # - path: /Users/you/projects/auth-service
+  #   alias: auth
+  # - path: /Users/you/projects/api-gateway
+  #   alias: gateway
 
-# Behavioral thresholds — tune these to your workflow
+# Thresholds — tune these to match your workflow.
 thresholds:
-  session_stale_minutes: 30                # Warn if no activity for this long
-  max_tool_calls_before_checkpoint: 100    # Suggest a checkpoint after N tool calls
-  correction_pattern_threshold: 3          # Min corrections before flagging a pattern
+  # Minutes before a session is flagged as "stale" by session_health
+  session_stale_minutes: 30
+
+  # Tool calls before checkpoint suggests saving context
+  max_tool_calls_before_checkpoint: 100
+
+  # How many times a correction pattern repeats before triggering a warning
+  correction_pattern_threshold: 3
 
 # Embedding provider for semantic search over session history.
-# "local" uses Xenova transformers (no API key needed, runs on CPU).
-# "openai" uses text-embedding-3-small (faster, needs OPENAI_API_KEY).
+#   local   → runs Xenova/all-MiniLM-L6-v2 on your machine (free, private, ~90MB first download)
+#   openai  → uses text-embedding-3-small via API (faster, requires OPENAI_API_KEY)
+#   ollama  → uses a local Ollama model (requires ollama serve + ollama pull all-minilm)
 embeddings:
   provider: local
-  # openai_api_key: sk-...               # Uncomment if using openai provider
+
+  # Only needed if provider is openai:
+  # openai_api_key: sk-...   (or set OPENAI_API_KEY env var — preferred)
+
+  # Only needed if provider is ollama:
+  # ollama_model: all-minilm
+  # ollama_url: http://localhost:11434
