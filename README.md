@@ -76,7 +76,18 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ## Quick Start
 
-### Option A: npx (fastest — no install)
+### Option A: Interactive setup (recommended)
+
+The init wizard creates your `.mcp.json` and `.preflight/` config in one step:
+
+```bash
+cd /path/to/your/project
+npx preflight-dev init
+```
+
+It walks you through profile selection (minimal/standard/full), embedding provider, and config directory setup — then writes everything for you. Just restart Claude Code when it's done.
+
+### Option B: One-liner (fastest — no wizard)
 
 ```bash
 claude mcp add preflight -- npx -y preflight-dev-serve
@@ -90,7 +101,7 @@ claude mcp add preflight \
   -- npx -y preflight-dev-serve
 ```
 
-### Option B: Clone & configure manually
+### Option C: Clone & configure manually
 
 ```bash
 git clone https://github.com/TerminalGravity/preflight.git
@@ -115,7 +126,7 @@ Add to your project's `.mcp.json`:
 
 Restart Claude Code. The tools activate automatically.
 
-### Option C: npm (global)
+### Option D: npm (global)
 
 ```bash
 npm install -g preflight-dev
