@@ -4,9 +4,30 @@ import { run, getBranch, getStatus, getRecentCommits, getDiffFiles, getStagedFil
 import { findWorkspaceDocs, PROJECT_DIR } from "../lib/files.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { getRelatedProjects } from "../lib/config.js";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
+import { execFileSync } from "child_process";
 import { join, basename, resolve } from "path";
 import { loadAllContracts, searchContracts, formatContracts } from "../lib/contracts.js";
+
+/** Recursively find test files using Node.js fs */
+function findTestFiles(dir: string, maxDepth: number, limit: number, depth = 0): string[] {
+  const results: string[] = [];
+  if (depth > maxDepth || results.length >= limit) return results;
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (results.length >= limit) break;
+      const fullPath = join(dir, entry.name);
+      if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules") {
+        results.push(...findTestFiles(fullPath, maxDepth, limit - results.length, depth + 1));
+      } else if (entry.isFile() && /\.spec\.ts$/.test(entry.name)) {
+        // Return relative to PROJECT_DIR
+        results.push(fullPath.replace(PROJECT_DIR + "/", ""));
+      }
+    }
+  } catch { /* directory may not exist */ }
+  return results;
+}
 
 /** Parse test failures from common report formats without fragile shell pipelines */
 function getTestFailures(): string {
@@ -152,10 +173,24 @@ export function registerClarifyIntent(server: McpServer): void {
       let hasTestFailures = false;
 
       if (!area || area.includes("test") || area.includes("fix") || area.includes("ui") || area.includes("api")) {
-        const typeErrors = run("pnpm tsc --noEmit 2>&1 | grep -c 'error TS' || echo '0'");
-        hasTypeErrors = parseInt(typeErrors, 10) > 0;
+        let typeErrorCount = 0;
+        try {
+          execFileSync("pnpm", ["tsc", "--noEmit"], {
+            cwd: PROJECT_DIR,
+            encoding: "utf-8",
+            timeout: 30000,
+            stdio: ["pipe", "pipe", "pipe"],
+          });
+        } catch (e: any) {
+          const output = (e.stdout || "") + (e.stderr || "");
+          const matches = output.match(/error TS/g);
+          typeErrorCount = matches ? matches.length : 0;
+        }
+        const typeErrors = String(typeErrorCount);
+        hasTypeErrors = typeErrorCount > 0;
 
-        const testFiles = run("find tests -name '*.spec.ts' -maxdepth 4 2>/dev/null | head -20");
+        // Find test files using Node.js fs instead of shell find
+        const testFiles = findTestFiles(join(PROJECT_DIR, "tests"), 4, 20).join("\n");
         const failingTests = getTestFailures();
         hasTestFailures = failingTests !== "all passing" && failingTests !== "no test report found";
 
