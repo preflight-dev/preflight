@@ -134,6 +134,37 @@ cp /path/to/preflight/examples/CLAUDE.md your-project/CLAUDE.md
 
 See [`examples/CLAUDE.md`](examples/CLAUDE.md) for a ready-to-use template with recommended rules for when to preflight, session hygiene, and skip-lists.
 
+### Verify it's working
+
+After setup, open Claude Code in your project and try:
+
+```
+> fix the tests
+```
+
+If preflight is connected, you'll see a `preflight_check` tool call fire automatically (or when configured via CLAUDE.md). It should respond with something like:
+
+```
+🛫 Preflight Check
+Triage: ambiguous (confidence: 0.70)
+Reasons: short prompt without file references; contains vague verbs without specific targets
+
+⚠️ Clarification Needed
+- Vague verb without specific file targets
+- Very short prompt — likely missing context
+
+Git State
+Branch: main | Dirty files: 3
+```
+
+If you see this, you're good. If nothing happens:
+
+1. **Check tools are loaded:** Type `/mcp` in Claude Code — you should see `preflight` listed with its tools
+2. **Check the server starts:** Run `npx preflight-dev-serve` in your terminal — it should output JSON (MCP protocol), not errors
+3. **Restart Claude Code:** Tools are loaded at startup, so you need a full restart after adding the MCP server
+
+> **Tip:** Try `prompt_score "update the thing"` to test a specific tool directly. You should get a grade and suggestions.
+
 ---
 
 ## How It Works
