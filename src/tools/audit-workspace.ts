@@ -36,7 +36,8 @@ export function registerAuditWorkspace(server: McpServer): void {
     {},
     async () => {
       const docs = findWorkspaceDocs();
-      const recentFiles = run("git diff --name-only HEAD~10 2>/dev/null || echo ''").split("\n").filter(Boolean);
+      const recentFilesRaw = run(["diff", "--name-only", "HEAD~10"]);
+      const recentFiles = (recentFilesRaw.startsWith("[") ? "" : recentFilesRaw).split("\n").filter(Boolean);
       const sections: string[] = [];
 
       // Doc freshness
@@ -75,7 +76,10 @@ export function registerAuditWorkspace(server: McpServer): void {
       // Check for gap trackers or similar tracking docs
       const trackingDocs = Object.entries(docs).filter(([n]) => /gap|track|progress/i.test(n));
       if (trackingDocs.length > 0) {
-        const testFilesCount = parseInt(run("find tests -name '*.spec.ts' -o -name '*.test.ts' 2>/dev/null | wc -l").trim()) || 0;
+        const allTracked = run(["ls-files"]);
+        const testFilesCount = allTracked && !allTracked.startsWith("[")
+          ? allTracked.split("\n").filter(f => /\.(spec|test)\.(ts|tsx)$/.test(f)).length
+          : 0;
         sections.push(`## Tracking Docs\n${trackingDocs.map(([n]) => {
           const age = docStatus.find(d => d.name === n)?.ageHours ?? "?";
           return `- .claude/${n} — last updated ${age}h ago`;

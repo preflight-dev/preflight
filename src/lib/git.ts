@@ -1,6 +1,66 @@
 import { execFileSync } from "child_process";
+import { readFileSync } from "fs";
 import { PROJECT_DIR } from "./files.js";
 import type { RunError } from "../types.js";
+
+/**
+ * Run an arbitrary command safely using execFileSync (no shell).
+ * Returns stdout on success, error string on failure.
+ */
+export function exec(cmd: string, args: string[], opts: { timeout?: number; cwd?: string } = {}): string {
+  try {
+    return execFileSync(cmd, args, {
+      cwd: opts.cwd || PROJECT_DIR,
+      encoding: "utf-8",
+      timeout: opts.timeout || 10000,
+      maxBuffer: 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch (e: any) {
+    if (e.killed === true || e.signal === "SIGTERM") {
+      return `[timed out after ${opts.timeout || 10000}ms]`;
+    }
+    const output = e.stdout?.trim() || e.stderr?.trim();
+    if (output) return output;
+    if (e.code === "ENOENT") return `[${cmd} not found]`;
+    return `[command failed: ${cmd} ${args.join(" ")} (exit ${e.status ?? "?"})]`;
+  }
+}
+
+/**
+ * Count lines in a file using Node.js (replaces `wc -l < file`).
+ */
+export function countLines(filePath: string): number {
+  try {
+    const content = readFileSync(filePath, "utf-8");
+    return content.split("\n").length - (content.endsWith("\n") ? 1 : 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Count bytes in a file using Node.js (replaces `wc -c < file`).
+ */
+export function countBytes(filePath: string): number {
+  try {
+    return readFileSync(filePath).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Read first N lines of a file (replaces `head -N file`).
+ */
+export function headLines(filePath: string, n: number): string {
+  try {
+    const content = readFileSync(filePath, "utf-8");
+    return content.split("\n").slice(0, n).join("\n");
+  } catch {
+    return "could not read file";
+  }
+}
 
 /**
  * Run a git command safely using execFileSync (no shell injection).
