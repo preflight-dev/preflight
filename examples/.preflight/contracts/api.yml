@@ -1,17 +1,17 @@
-# .preflight/contracts/api.yml — Manual contract definitions
+# =============================================================================
+# Manual Contract Definitions — contracts/api.yml
+# =============================================================================
+# Define types, interfaces, and routes that preflight should know about
+# for cross-service awareness. These supplement auto-extraction.
 #
-# Define shared types and interfaces that preflight should know about.
-# These supplement auto-extracted contracts from your codebase.
-# Manual definitions win on name conflicts with auto-extracted ones.
-#
-# Why manual contracts?
-#   - Document cross-service interfaces that live in docs, not code
-#   - Define contracts for external APIs your services consume
-#   - Pin down types that are implicit (e.g., event payloads)
+# Copy to: <your-project-root>/.preflight/contracts/api.yml
+# You can split into multiple files: contracts/auth.yml, contracts/billing.yml, etc.
+# =============================================================================
 
+# Example: a shared interface used across frontend and backend
 - name: User
   kind: interface
-  description: Core user model shared across all services
+  description: Core user object returned by /api/users endpoints
   fields:
     - name: id
       type: string
@@ -19,40 +19,36 @@
     - name: email
       type: string
       required: true
-    - name: tier
-      type: "'free' | 'pro' | 'enterprise'"
+    - name: role
+      type: "'admin' | 'member' | 'viewer'"
       required: true
-    - name: createdAt
-      type: Date
+    - name: teamId
+      type: string
+      required: false
+
+# Example: an API route contract
+- name: POST /api/users/invite
+  kind: route
+  description: Sends a team invitation email
+  fields:
+    - name: email
+      type: string
+      required: true
+    - name: role
+      type: "'member' | 'viewer'"
+      required: true
+    - name: teamId
+      type: string
       required: true
 
-- name: AuthToken
-  kind: interface
-  description: JWT payload structure from auth-service
+# Example: a shared enum used in multiple services
+- name: SubscriptionTier
+  kind: enum
+  description: Billing tiers — must stay in sync between billing-service and frontend
   fields:
-    - name: userId
+    - name: FREE
       type: string
-      required: true
-    - name: permissions
-      type: string[]
-      required: true
-    - name: expiresAt
-      type: number
-      required: true
-
-- name: WebhookPayload
-  kind: interface
-  description: Standard webhook envelope for inter-service events
-  fields:
-    - name: event
+    - name: PRO
       type: string
-      required: true
-    - name: timestamp
+    - name: ENTERPRISE
       type: string
-      required: true
-    - name: data
-      type: Record<string, unknown>
-      required: true
-    - name: source
-      type: string
-      required: true
