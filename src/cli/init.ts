@@ -92,7 +92,7 @@ async function main(): Promise<void> {
 
   if (profile === "full") {
     console.log("\nFull profile uses embeddings for vector search.");
-    const provider = await ask("Embedding provider [local/openai] (default: local): ");
+    const provider = await ask("Embedding provider [local/openai/voyage] (default: local): ");
     if (provider.trim().toLowerCase() === "openai") {
       const key = await ask("OpenAI API key (or set OPENAI_API_KEY later): ");
       if (key.trim()) {
