@@ -10,7 +10,7 @@ A 24-tool MCP server for Claude Code that catches ambiguous instructions before 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/preflight-dev)](https://www.npmjs.com/package/preflight-dev)
-[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Tool Reference](#tool-reference) · [Configuration](#configuration) · [Scoring](#the-12-category-scorecard)
 
@@ -123,6 +123,47 @@ claude mcp add preflight -- preflight-dev-serve
 ```
 
 > **Note:** `preflight-dev` runs the interactive setup wizard. `preflight-dev-serve` starts the MCP server — that's what you want in your Claude Code config.
+
+### Make Claude use preflight automatically
+
+Add preflight rules to your project's `CLAUDE.md` so Claude runs `preflight_check` on every prompt without you asking:
+
+```bash
+cp /path/to/preflight/examples/CLAUDE.md your-project/CLAUDE.md
+```
+
+See [`examples/CLAUDE.md`](examples/CLAUDE.md) for a ready-to-use template with recommended rules for when to preflight, session hygiene, and skip-lists.
+
+### Verify it's working
+
+After setup, open Claude Code in your project and try:
+
+```
+> fix the tests
+```
+
+If preflight is connected, you'll see a `preflight_check` tool call fire automatically (or when configured via CLAUDE.md). It should respond with something like:
+
+```
+🛫 Preflight Check
+Triage: ambiguous (confidence: 0.70)
+Reasons: short prompt without file references; contains vague verbs without specific targets
+
+⚠️ Clarification Needed
+- Vague verb without specific file targets
+- Very short prompt — likely missing context
+
+Git State
+Branch: main | Dirty files: 3
+```
+
+If you see this, you're good. If nothing happens:
+
+1. **Check tools are loaded:** Type `/mcp` in Claude Code — you should see `preflight` listed with its tools
+2. **Check the server starts:** Run `npx preflight-dev-serve` in your terminal — it should output JSON (MCP protocol), not errors
+3. **Restart Claude Code:** Tools are loaded at startup, so you need a full restart after adding the MCP server
+
+> **Tip:** Try `prompt_score "update the thing"` to test a specific tool directly. You should get a grade and suggestions.
 
 ---
 
@@ -731,6 +772,16 @@ ollama pull all-minilm
 # Verify it works
 curl http://localhost:11434/api/embed -d '{"model":"all-minilm","input":"test"}'
 ```
+
+---
+
+## Troubleshooting
+
+Having issues? Check **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for solutions to common problems including:
+- LanceDB setup and platform issues
+- Embedding provider configuration
+- `.preflight/` config parsing errors
+- Profile selection guide
 
 ---
 
