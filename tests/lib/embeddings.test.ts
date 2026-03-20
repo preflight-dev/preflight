@@ -63,4 +63,27 @@ describe("createEmbeddingProvider", () => {
     });
     expect(provider.dimensions).toBe(1536);
   });
+
+  it("throws when voyage provider has no API key", () => {
+    expect(() =>
+      createEmbeddingProvider({ provider: "voyage" }),
+    ).toThrow("API key required");
+  });
+
+  it("returns voyage provider with 1024 dimensions (voyage-3)", () => {
+    const provider = createEmbeddingProvider({
+      provider: "voyage",
+      apiKey: "pa-test-key",
+    });
+    expect(provider.dimensions).toBe(1024);
+  });
+
+  it("returns voyage provider with 512 dimensions for voyage-3-lite", () => {
+    const provider = createEmbeddingProvider({
+      provider: "voyage",
+      apiKey: "pa-test-key",
+      model: "voyage-3-lite",
+    });
+    expect(provider.dimensions).toBe(512);
+  });
 });

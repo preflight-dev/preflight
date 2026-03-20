@@ -55,7 +55,7 @@ export interface ProjectInfo {
 }
 
 export interface TimelineConfig {
-  embedding_provider: "local" | "openai";
+  embedding_provider: "local" | "openai" | "voyage";
   embedding_model: string;
   openai_api_key?: string;
   indexed_projects: Record<string, {
