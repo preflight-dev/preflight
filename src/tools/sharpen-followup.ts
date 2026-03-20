@@ -1,7 +1,7 @@
 // CATEGORY 4: sharpen_followup — Follow-up Specificity
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { run } from "../lib/git.js";
+import { run, getDiffFiles, getStagedFiles } from "../lib/git.js";
 import { now } from "../lib/state.js";
 
 /** Parse git porcelain output into deduplicated file paths, handling renames (R/C) */
@@ -26,19 +26,24 @@ function parsePortelainFiles(output: string): string[] {
 
 /** Get recently changed files, safe for first commit / shallow clones */
 function getRecentChangedFiles(): string[] {
-  // Try HEAD~1..HEAD, fall back to just staged, then unstaged
-  const commands = [
-    "git diff --name-only HEAD~1 HEAD 2>/dev/null",
-    "git diff --name-only --cached 2>/dev/null",
-    "git diff --name-only 2>/dev/null",
-  ];
-  const results = new Set<string>();
-  for (const cmd of commands) {
-    const out = run(cmd);
-    if (out) out.split("\n").filter(Boolean).forEach((f) => results.add(f));
-    if (results.size > 0) break; // first successful source is enough
+  // Try HEAD~1..HEAD first
+  const committed = run(["diff", "--name-only", "HEAD~1", "HEAD"]);
+  if (committed && !committed.startsWith("[")) {
+    const files = committed.split("\n").filter(Boolean);
+    if (files.length > 0) return files;
   }
-  return [...results];
+  // Fall back to staged
+  const staged = getStagedFiles();
+  if (staged && !staged.startsWith("[")) {
+    const files = staged.split("\n").filter(Boolean);
+    if (files.length > 0) return files;
+  }
+  // Fall back to unstaged
+  const unstaged = run(["diff", "--name-only"]);
+  if (unstaged && !unstaged.startsWith("[")) {
+    return unstaged.split("\n").filter(Boolean);
+  }
+  return [];
 }
 
 export function registerSharpenFollowup(server: McpServer): void {
@@ -87,7 +92,7 @@ export function registerSharpenFollowup(server: McpServer): void {
       // Gather context to resolve ambiguity
       const contextFiles: string[] = [...(previous_files ?? [])];
       const recentChanged = getRecentChangedFiles();
-      const porcelainOutput = run("git status --porcelain 2>/dev/null");
+      const porcelainOutput = run(["status", "--porcelain"]);
       const untrackedOrModified = parsePortelainFiles(porcelainOutput);
 
       const allKnownFiles = [...new Set([...contextFiles, ...recentChanged, ...untrackedOrModified])].filter(Boolean);
