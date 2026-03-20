@@ -1,7 +1,8 @@
 {
   "name": "preflight-dev",
+  "mcpName": "io.github.preflight-dev/preflight",
   "version": "3.2.0",
-  "description": "Preflight checks for AI coding agents — catch vague prompts, surface missing context, search session history",
+  "description": "Preflight checks for AI coding agents \u2014 catch vague prompts, surface missing context, search session history",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
