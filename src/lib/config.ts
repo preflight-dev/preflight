@@ -63,7 +63,16 @@ const DEFAULT_CONFIG: PreflightConfig = {
   },
 };
 
+const VALID_PROFILES: Profile[] = ["minimal", "standard", "full"];
+const VALID_PROVIDERS: EmbeddingProvider[] = ["local", "openai"];
+const VALID_STRICTNESS: TriageStrictness[] = ["relaxed", "standard", "strict"];
+
 let _config: PreflightConfig | null = null;
+
+/** Reset cached config (useful for testing). */
+export function resetConfig(): void {
+  _config = null;
+}
 
 /** Load config from .preflight/ directory or fall back to env vars */
 function loadConfig(): PreflightConfig {
@@ -81,11 +90,23 @@ function loadConfig(): PreflightConfig {
       const configData = yamlLoad(configYaml) as any;
       
       if (configData) {
-        // Merge config data with defaults
-        if (configData.profile) config.profile = configData.profile;
+        // Merge config data with defaults (validate enum values)
+        if (configData.profile) {
+          if (VALID_PROFILES.includes(configData.profile)) {
+            config.profile = configData.profile;
+          } else {
+            console.warn(`preflight: warning - invalid profile "${configData.profile}", using "${config.profile}"`);
+          }
+        }
         if (configData.related_projects) config.related_projects = configData.related_projects;
         if (configData.thresholds) config.thresholds = { ...config.thresholds, ...configData.thresholds };
-        if (configData.embeddings) config.embeddings = { ...config.embeddings, ...configData.embeddings };
+        if (configData.embeddings) {
+          if (configData.embeddings.provider && !VALID_PROVIDERS.includes(configData.embeddings.provider)) {
+            console.warn(`preflight: warning - invalid embedding provider "${configData.embeddings.provider}", using "${config.embeddings.provider}"`);
+            delete configData.embeddings.provider;
+          }
+          config.embeddings = { ...config.embeddings, ...configData.embeddings };
+        }
       }
     } catch (error) {
       console.warn(`preflight: warning - failed to parse .preflight/config.yml: ${error}`);
@@ -100,7 +121,13 @@ function loadConfig(): PreflightConfig {
       
       if (triageData) {
         if (triageData.rules) config.triage.rules = { ...config.triage.rules, ...triageData.rules };
-        if (triageData.strictness) config.triage.strictness = triageData.strictness;
+        if (triageData.strictness) {
+          if (VALID_STRICTNESS.includes(triageData.strictness)) {
+            config.triage.strictness = triageData.strictness;
+          } else {
+            console.warn(`preflight: warning - invalid triage strictness "${triageData.strictness}", using "${config.triage.strictness}"`);
+          }
+        }
       }
     } catch (error) {
       console.warn(`preflight: warning - failed to parse .preflight/triage.yml: ${error}`);
