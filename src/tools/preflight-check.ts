@@ -12,31 +12,21 @@ import { getConfig } from "../lib/config.js";
 import { searchSemantic } from "../lib/timeline-db.js";
 import { basename, join } from "path";
 import { loadPatterns, matchPatterns, formatPatternMatches } from "../lib/patterns.js";
+import {
+  extractFilePaths,
+  verifyFiles as verifyFilesHelper,
+  detectAmbiguity,
+  estimateComplexity,
+  splitSubtasks,
+} from "../lib/preflight-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract file paths from prompt text */
-function extractFilePaths(prompt: string): string[] {
-  const matches = prompt.match(/[\w\-./\\]+\.\w{1,6}/g) || [];
-  return [...new Set(matches)];
-}
-
-/** Verify files exist and return stats */
+/** Verify files against PROJECT_DIR */
 function verifyFiles(paths: string[]): string[] {
-  const lines: string[] = [];
-  for (const p of paths) {
-    const abs = resolve(PROJECT_DIR, p);
-    if (!abs.startsWith(resolve(PROJECT_DIR))) continue; // path traversal guard
-    if (existsSync(abs)) {
-      const s = statSync(abs);
-      lines.push(`✅ \`${p}\` — ${s.size} bytes, modified ${s.mtime.toISOString().slice(0, 16)}`);
-    } else {
-      lines.push(`❌ \`${p}\` — not found`);
-    }
-  }
-  return lines;
+  return verifyFilesHelper(paths, PROJECT_DIR);
 }
 
 /** Get related project paths from config + env */
@@ -127,9 +117,7 @@ function buildScopeSection(prompt: string): string[] {
   }
 
   // Estimate complexity
-  const hasMultipleFiles = filePaths.length > 3;
-  const hasMultipleDirs = new Set(filePaths.map(f => f.split("/")[0])).size > 2;
-  const complexity = hasMultipleFiles && hasMultipleDirs ? "LARGE" : filePaths.length > 1 ? "MEDIUM" : "SMALL";
+  const complexity = estimateComplexity(filePaths);
   sections.push(`### Scope: ${complexity}`);
 
   return sections;
@@ -137,24 +125,8 @@ function buildScopeSection(prompt: string): string[] {
 
 /** Build sequence section for multi-step */
 function buildSequenceSection(prompt: string): string[] {
-  // Split prompt into sub-tasks
-  const subtasks: string[] = [];
-
-  // Split on "and", "then", numbered lists, bullet points
-  const parts = prompt
-    .split(/\b(?:then|after that|next|finally)\b|(?:,\s*and\s+)|(?:\band\b(?=\s+(?:update|add|remove|create|fix|change|refactor|implement|deploy)))/i)
-    .map(s => s.trim())
-    .filter(s => s.length > 5);
-
-  if (parts.length > 1) {
-    for (let i = 0; i < parts.length; i++) {
-      const risk = /schema|migrat|database|config|env|deploy/i.test(parts[i]) ? "🔴 HIGH" :
-                   /api|route|endpoint/i.test(parts[i]) ? "🟡 MEDIUM" : "🟢 LOW";
-      subtasks.push(`${i + 1}. ${parts[i].charAt(0).toUpperCase() + parts[i].slice(1)} — Risk: ${risk}`);
-    }
-  } else {
-    subtasks.push(`1. ${prompt.slice(0, 100)} — Risk: 🟡 MEDIUM`);
-  }
+  const tasks = splitSubtasks(prompt);
+  const subtasks = tasks.map((t, i) => `${i + 1}. ${t.step} — Risk: ${t.risk}`);
 
   return [
     `### Execution Plan`,
