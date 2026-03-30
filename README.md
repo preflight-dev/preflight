@@ -74,6 +74,10 @@ The pattern is always the same: vague prompt → Claude guesses → wrong output
 
 ---
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/preflight-dev-preflight).
+
 ## Quick Start
 
 ### Option A: npx (fastest — no install)
