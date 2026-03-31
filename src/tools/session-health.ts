@@ -4,6 +4,7 @@ import { getBranch, getStatus, getLastCommit, getLastCommitTime, run } from "../
 import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
 import { loadState, saveState } from "../lib/state.js";
 import { getConfig } from "../lib/config.js";
+import { writeCheckpoint } from "../lib/checkpoint-writer.js";
 
 /** Parse a git date string safely, returning null on failure */
 function parseGitDate(dateStr: string): Date | null {
@@ -18,8 +19,10 @@ export function registerSessionHealth(server: McpServer): void {
     `Check session health and recommend whether to continue, checkpoint, or start fresh. Tracks session depth, uncommitted work, workspace staleness, and time since last commit. Call periodically during long sessions.`,
     {
       stale_threshold_hours: z.number().optional().describe("Hours before a doc is considered stale. Default: 2"),
+      auto_checkpoint: z.boolean().optional().describe("When true, automatically run checkpoint if session health is critical. Default: true"),
     },
-    async ({ stale_threshold_hours }) => {
+    async ({ stale_threshold_hours, auto_checkpoint }) => {
+      const shouldAutoCheckpoint = auto_checkpoint !== false;
       const config = getConfig();
       const staleHours = stale_threshold_hours ?? (config.thresholds.session_stale_minutes / 60);
       const branch = getBranch();
@@ -82,6 +85,26 @@ export function registerSessionHealth(server: McpServer): void {
 
       const commitTimeStr = minutesSinceCommit !== null ? `${minutesSinceCommit}min ago` : "unknown";
 
+      // Auto-checkpoint when critical
+      let autoCheckpointReport = "";
+      if (severity === "critical" && shouldAutoCheckpoint && dirtyCount > 0) {
+        try {
+          const cpResult = writeCheckpoint({
+            summary: `Auto-checkpoint triggered by session-health (session ${sessionMinutes}min, ${dirtyCount} uncommitted files, ${commitTimeStr} since last commit)`,
+            next_steps: "Review .claude/last-checkpoint.md and continue where you left off",
+            commit_mode: "tracked",
+          });
+          autoCheckpointReport = `\n\n### 🛟 Auto-Checkpoint Triggered
+**File**: ${cpResult.checkpointFile}
+**Commit**: ${cpResult.commitResult}
+Work has been automatically saved. Resume with: "Read .claude/last-checkpoint.md"`;
+        } catch (err) {
+          autoCheckpointReport = `\n\n### ⚠️ Auto-Checkpoint Failed
+Error: ${err instanceof Error ? err.message : String(err)}
+Run \`checkpoint\` manually to save your work.`;
+        }
+      }
+
       return {
         content: [{
           type: "text" as const,
@@ -99,7 +122,7 @@ export function registerSessionHealth(server: McpServer): void {
 ${issues.length ? issues.join("\n") : "None — session is healthy"}
 
 ### Recommendation
-${recommendation}`,
+${recommendation}${autoCheckpointReport}`,
         }],
       };
     }
