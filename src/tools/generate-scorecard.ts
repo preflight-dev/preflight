@@ -60,7 +60,6 @@ function clamp(v: number): number {
 
 const PATH_RE = /(?:\/[\w./-]+\.\w{1,6}|\b\w+\.\w{2,6}\b)/;
 const FILE_EXT_RE = /\.\b(?:ts|tsx|js|jsx|py|rs|go|rb|java|c|cpp|h|css|scss|html|json|yaml|yml|toml|md|sql|sh)\b/;
-const CORRECTION_PATTERNS = [/\bno\b/i, /\bwrong\b/i, /\bnot that\b/i, /\bi meant\b/i, /\bactually\b/i, /\binstead\b/i, /\bundo\b/i, /\brevert\b/i];
 
 interface ParsedSession {
   id: string;
@@ -421,38 +420,6 @@ function computeScorecard(
 
 // ── Markdown Output ────────────────────────────────────────────────────────
 
-function toMarkdown(sc: Scorecard): string {
-  const lines: string[] = [];
-  lines.push(`# 📊 Prompt Discipline Scorecard`);
-  lines.push(`**Project:** ${sc.project} | **Period:** ${sc.period} (${sc.date}) | **Overall: ${sc.overallGrade} (${sc.overall}/100)**\n`);
-
-  lines.push(`## Category Scores`);
-  lines.push(`| # | Category | Score | Grade |`);
-  lines.push(`|---|----------|-------|-------|`);
-  sc.categories.forEach((c, i) => {
-    lines.push(`| ${i + 1} | ${c.name} | ${c.score} | ${c.grade} |`);
-  });
-
-  lines.push(`\n## Highlights`);
-  lines.push(`- 🏆 **Best:** ${sc.highlights.best.name} (${sc.highlights.best.grade}) — ${sc.highlights.best.evidence}`);
-  lines.push(`- ⚠️ **Worst:** ${sc.highlights.worst.name} (${sc.highlights.worst.grade}) — ${sc.highlights.worst.evidence}`);
-
-  lines.push(`\n## Detailed Breakdown`);
-  sc.categories.forEach((c, i) => {
-    lines.push(`\n### ${i + 1}. ${c.name} — ${c.grade} (${c.score}/100)`);
-    lines.push(`Evidence: ${c.evidence}`);
-    if (c.examples?.bad?.length) {
-      lines.push(`\nExamples of vague follow-ups:`);
-      c.examples.bad.forEach((e) => lines.push(`- ❌ "${e}"`));
-    }
-    if (c.examples?.good?.length) {
-      lines.push(`\nExamples of specific follow-ups:`);
-      c.examples.good.forEach((e) => lines.push(`- ✅ "${e}"`));
-    }
-  });
-
-  return lines.join("\n");
-}
 
 // ── HTML / PDF Output ──────────────────────────────────────────────────────
 

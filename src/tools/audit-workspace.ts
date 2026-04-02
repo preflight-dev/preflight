@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { run } from "../lib/git.js";
-import { readIfExists, findWorkspaceDocs } from "../lib/files.js";
+import { findWorkspaceDocs } from "../lib/files.js";
 
 /** Extract top-level work areas from file paths generically */
 function detectWorkAreas(files: string[]): Set<string> {
